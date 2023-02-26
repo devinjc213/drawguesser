@@ -1,0 +1,44 @@
+.App {
+  display: flex;
+	justify-content: center;
+	align-items: center;
+	height: 100vh;
+	background-image: linear-gradient(to bottom, #200869, #3b5182); 
+}
+
+.chatMsg {
+	display: flex;
+}
+
+.chatMsg > span {
+	font-weight: 700;
+	margin-right: 0.25rem;
+}
+
+.chat {
+	padding: 1rem;
+	background: #778396;
+	border-radius: 4px;
+	margin-right: 1rem;
+}
+
+.textInput {
+	width: 250px;
+	border: 2px solid black;
+	outline: none;
+	border: none;
+}
+
+.chatBox {
+	width: 300px;
+	height: 600px;
+	background: white;
+	overflow-y: auto;
+}
+
+.gameContainer {
+	display: flex;
+	max-width: 1536px;
+	padding: 2rem;
+	background: #43464B;
+}
