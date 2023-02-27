@@ -1,0 +1,15 @@
+.overlay {
+    position: absolute;
+}
+
+.modal {
+    background: gray;
+    padding: 2rem;
+    border-radius: 4px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
