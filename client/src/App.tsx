@@ -52,7 +52,6 @@ const App: Component = () => {
 	});
 
 	socket.on('create_join_room', room => {
-		console.log(room);
 		setRoom(room);
 	})
 
