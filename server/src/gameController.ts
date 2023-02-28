@@ -12,6 +12,7 @@ export default class GameController {
 	private roundTimer: number;
 	private currentRoundTimer;
 	private intermissionTimer: number;
+	private currentIntermissionTimer: number;
 	private numberOfRounds: number;
 	private words: string[]
 	private interval: any;
@@ -27,6 +28,7 @@ export default class GameController {
 		this.roundTimer = 45;
 		this.currentRoundTimer = this.roundTimer;
 		this.intermissionTimer = 10;
+		this.currentIntermissionTimer = this.intermissionTimer;
 		this.numberOfRounds = 3;
 		this.words = ["apple"];
 		this.interval = null;
@@ -38,7 +40,7 @@ export default class GameController {
 			clearInterval(this.interval);
 			this.roundEnd();
 		}
-		
+
 		io.to(this.room).emit('round_timer', this.currentRoundTimer);
 	}
 
@@ -67,7 +69,7 @@ export default class GameController {
 
 		return array;
 	}
-	
+
 	playerJoined(player: UserAndSocket) {
 		this.clients = [...this.clients, player];
 	}
@@ -86,6 +88,7 @@ export default class GameController {
 
 
 	intermission() {}
+
 	roundEnd() {
 		this.currentRoundTimer = this.roundTimer;
 	}
