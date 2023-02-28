@@ -54,17 +54,18 @@ export default class GameController {
 		}
 	} 
 
-	shufflePlayers() {
-		let currentIndex = this.clients.length;
+	shuffle(array: UserAndSocket[] | []) {
+		let currentIndex = array.length;
 		let randomIndex: number;
 		while (currentIndex != 0) {
 			randomIndex = Math.floor(Math.random() * currentIndex);
 			currentIndex--;
 
-			[this.clients[currentIndex], this.clients[randomIndex]] = [
-				this.clients[randomIndex], this.clients[currentIndex]];
+			[array[currentIndex], array[randomIndex]] = [
+				array[randomIndex], array[currentIndex]];
 		}
-		console.log(this.clients);
+
+		return array;
 	}
 	
 	playerJoined(player: UserAndSocket) {
@@ -75,7 +76,7 @@ export default class GameController {
 		console.log('round start');
 		this.roundIsStarted = true;
 		this.interval = setInterval(this.countdown.bind(this), 1000);
-		this.shufflePlayers();
+		this.clients = this.shuffle(this.clients);
 		this.countdown();
 		io.to(this.room).emit('round_start', {
 			drawer: this.drawer,
