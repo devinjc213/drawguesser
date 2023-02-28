@@ -49,97 +49,96 @@ const Canvas: Component<{ socket: Socket, isDrawer: boolean }> = (props) => {
 		});
 	}
 
-const draw = (e: any) => {
-	if (e.buttons !== 1 || !props.isDrawer) return;
-	ctx.beginPath();
+	const draw = (e: any) => {
+		if (e.buttons !== 1 || !props.isDrawer) return;
+		ctx.beginPath();
 
-	ctx.lineWidth = brushSize();
-	ctx.lineCap = 'round';
-	ctx.strokeStyle = drawColor();
+		ctx.lineWidth = brushSize();
+		ctx.lineCap = 'round';
+		ctx.strokeStyle = drawColor();
 
-	ctx.moveTo(pos().x, pos().y);
-	handlePos(e);
-	ctx.lineTo(pos().x, pos().y);
+		ctx.moveTo(pos().x, pos().y);
+		handlePos(e);
+		ctx.lineTo(pos().x, pos().y);
 
-	ctx.stroke();
+		ctx.stroke();
 
-	props.socket.emit('canvas_emit', { x: pos().x, y: pos().y, color: drawColor(), brushSize: brushSize(), id: props.socket.id });
-};
+		props.socket.emit('canvas_emit', { x: pos().x, y: pos().y, color: drawColor(), brushSize: brushSize(), id: props.socket.id });
+	};
 
-const clearPos = () => {
-	setPos({ x: 0, y: 0 });
-	props.socket.emit('clear_pos', true);
-}
-const emitDraw = (x: number, y: number, color: string, brushSize: number) => {
-	ctx.beginPath();
+	const clearPos = () => {
+		setPos({ x: 0, y: 0 });
+		props.socket.emit('clear_pos', true);
+	}
+	const emitDraw = (x: number, y: number, color: string, brushSize: number) => {
+		ctx.beginPath();
 
-	ctx.lineWidth = brushSize;
-	ctx.lineCap = 'round';
-	ctx.strokeStyle = color;
+		ctx.lineWidth = brushSize;
+		ctx.lineCap = 'round';
+		ctx.strokeStyle = color;
 
-	if (lastX && lastY) {
-		ctx.moveTo(lastX, lastY);
-		ctx.lineTo(x, y);
+		if (lastX && lastY) {
+			ctx.moveTo(lastX, lastY);
+			ctx.lineTo(x, y);
+		}
+
+		ctx.stroke();
+
+		lastX = x;
+		lastY = y;
 	}
 
-	ctx.stroke();
+	props.socket.on('canvas_emit', data => {
+			if (data.id !== props.socket.id) emitDraw(data.x, data.y, data.color, data.brushSize);
+			});
 
-	lastX = x;
-	lastY = y;
-}
+	props.socket.on('clear_pos', clearPos => {
+			lastX = 0;
+			lastY = 0;
+			});
 
-props.socket.on('canvas_emit', data => {
-		if (data.id !== props.socket.id) emitDraw(data.x, data.y, data.color, data.brushSize);
-		});
+	props.socket.on('clear_canvas', (data) => {
+			if (data.id !== props.socket.id) handleClear();
+			});
 
-props.socket.on('clear_pos', clearPos => {
-		lastX = 0;
-		lastY = 0;
-		});
-
-props.socket.on('clear_canvas', (data) => {
-		if (data.id !== props.socket.id) handleClear();
-		});
-
-return (
+	return (
 		<div class={styles.canvasContainer}>
-		<canvas ref={canvas} width="750" height="600"></canvas>
-		<div class={styles.controls}>
-		<div class={styles.colorContainer}>
-		<div class={styles.colorRow}>
-		<div class={styles.colorSquare} style={{background: "#000"}} onclick={() => setDrawColor("#000")} />
-		<div class={styles.colorSquare} style={{background: "#545454"}} onclick={() => setDrawColor("#545454")} />
-		<div class={styles.colorSquare} style={{background: "#804000"}} onclick={() => setDrawColor("#804000")} />
-		<div class={styles.colorSquare} style={{background: "#FE0000"}} onclick={() => setDrawColor("#FE0000")} />
-		<div class={styles.colorSquare} style={{background: "#FE6A00"}} onclick={() => setDrawColor("#FE6A00")} />
-		<div class={styles.colorSquare} style={{background: "#FFD800"}} onclick={() => setDrawColor("#FFD800")} />
-		<div class={styles.colorSquare} style={{background: "#00FE20"}} onclick={() => setDrawColor("#00FE20")} />
-		<div class={styles.colorSquare} style={{background: "#0094FE"}} onclick={() => setDrawColor("#0094FE")} />
-		<div class={styles.colorSquare} style={{background: "#0026FF"}} onclick={() => setDrawColor("#0026FF")} />
-		<div class={styles.colorSquare} style={{background: "#B100FE"}} onclick={() => setDrawColor("#B100FE")} />
+			<canvas ref={canvas} width="750" height="600"></canvas>
+			<div class={styles.controls}>
+				<div class={styles.colorContainer}>
+					<div class={styles.colorRow}>
+						<div class={styles.colorSquare} style={{background: "#000"}} onclick={() => setDrawColor("#000")} />
+						<div class={styles.colorSquare} style={{background: "#545454"}} onclick={() => setDrawColor("#545454")} />
+						<div class={styles.colorSquare} style={{background: "#804000"}} onclick={() => setDrawColor("#804000")} />
+						<div class={styles.colorSquare} style={{background: "#FE0000"}} onclick={() => setDrawColor("#FE0000")} />
+						<div class={styles.colorSquare} style={{background: "#FE6A00"}} onclick={() => setDrawColor("#FE6A00")} />
+						<div class={styles.colorSquare} style={{background: "#FFD800"}} onclick={() => setDrawColor("#FFD800")} />
+						<div class={styles.colorSquare} style={{background: "#00FE20"}} onclick={() => setDrawColor("#00FE20")} />
+						<div class={styles.colorSquare} style={{background: "#0094FE"}} onclick={() => setDrawColor("#0094FE")} />
+						<div class={styles.colorSquare} style={{background: "#0026FF"}} onclick={() => setDrawColor("#0026FF")} />
+						<div class={styles.colorSquare} style={{background: "#B100FE"}} onclick={() => setDrawColor("#B100FE")} />
+					</div>
+				</div>
+				<div class={styles.colorRow}>
+					<div class={styles.colorSquare} style={{background: "#fff"}} onclick={() => setDrawColor("#fff")} />
+					<div class={styles.colorSquare} style={{background: "#A8A8A8"}} onclick={() => setDrawColor("#A8A8A8")} />
+					<div class={styles.colorSquare} style={{background: "#401F00"}} onclick={() => setDrawColor("#401F00")} />
+					<div class={styles.colorSquare} style={{background: "#806B00"}} onclick={() => setDrawColor("#806B00")} />
+					<div class={styles.colorSquare} style={{background: "#007F0E"}} onclick={() => setDrawColor("#007F0E")} />
+					<div class={styles.colorSquare} style={{background: "#00497E"}} onclick={() => setDrawColor("#00497E")} />
+					<div class={styles.colorSquare} style={{background: "#001280"}} onclick={() => setDrawColor("#001280")} />
+					<div class={styles.colorSquare} style={{background: "#590080"}} onclick={() => setDrawColor("#590080")} />
+				</div>
+				<input type="range" min="1" max="50" step="1" value={brushSize()} onChange={(e) => handleBrushSize(e)} />
+				<button onClick={() => {
+					handleClear();
+					props.socket.emit("clear_canvas", true);
+				}}>
+					Clear
+				</button>
+			</div>
 		</div>
-		<div class={styles.colorRow}>
-		<div class={styles.colorSquare} style={{background: "#fff"}} onclick={() => setDrawColor("#fff")} />
-		<div class={styles.colorSquare} style={{background: "#A8A8A8"}} onclick={() => setDrawColor("#A8A8A8")} />
-		<div class={styles.colorSquare} style={{background: "#401F00"}} onclick={() => setDrawColor("#401F00")} />
-<div class={styles.colorSquare} style={{background: "#800001"}} onclick={() => setDrawColor("#800001")} />
-<div class={styles.colorSquare} style={{background: "#803400"}} onclick={() => setDrawColor("#803400")} />
-<div class={styles.colorSquare} style={{background: "#806B00"}} onclick={() => setDrawColor("#806B00")} />
-<div class={styles.colorSquare} style={{background: "#007F0E"}} onclick={() => setDrawColor("#007F0E")} />
-<div class={styles.colorSquare} style={{background: "#00497E"}} onclick={() => setDrawColor("#00497E")} />
-<div class={styles.colorSquare} style={{background: "#001280"}} onclick={() => setDrawColor("#001280")} />
-<div class={styles.colorSquare} style={{background: "#590080"}} onclick={() => setDrawColor("#590080")} />
-</div>
-</div>
-<input type="range" min="1" max="50" step="1" value={brushSize()} onChange={(e) => handleBrushSize(e)} />
-<button onClick={() => {
-	handleClear();
-	props.socket.emit("clear_canvas", true);
-}}>Clear</button>
-</div>
-</div>
-
-);
+	);
 }
 
 export default Canvas;
