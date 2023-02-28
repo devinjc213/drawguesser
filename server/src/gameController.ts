@@ -1,5 +1,3 @@
-//game loop
-//round start -> round end -> next round
 import { io, UserAndSocket, MessageType } from './index';
 import type { Socket } from 'socket.io'
 
@@ -55,11 +53,29 @@ export default class GameController {
 			}	
 		}
 	} 
+
+	shufflePlayers() {
+		let currentIndex = this.clients.length;
+		let randomIndex: number;
+		while (currentIndex != 0) {
+			randomIndex = Math.floor(Math.random() * currentIndex);
+			currentIndex--;
+
+			[this.clients[currentIndex], this.clients[randomIndex]] = [
+				this.clients[randomIndex], this.clients[currentIndex]];
+		}
+		console.log(this.clients);
+	}
 	
+	playerJoined(player: UserAndSocket) {
+		this.clients = [...this.clients, player];
+	}
+
 	roundStart() {
 		console.log('round start');
 		this.roundIsStarted = true;
 		this.interval = setInterval(this.countdown.bind(this), 1000);
+		this.shufflePlayers();
 		this.countdown();
 		io.to(this.room).emit('round_start', {
 			drawer: this.drawer,

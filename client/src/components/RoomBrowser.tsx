@@ -18,7 +18,6 @@ const RoomBrowser: Component<{getRoom: Setter<string>, socket: Socket , name: st
 	});
 
 	props.socket.on('room_update', rooms => {
-		console.log(rooms);
 		setRoomList(rooms.filter((room: string) => room !== "lobby"))
 	});
 

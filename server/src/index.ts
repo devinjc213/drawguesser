@@ -3,7 +3,7 @@ import { Server } from "socket.io";
 import GameController from './gameController';
 
 export type UserAndSocket = { [key: string]: string }
-export type MessageType = { name: string, msg: string, room: string };
+	export type MessageType = { name: string, msg: string, room: string };
 
 type GameRoomType = {
 	[key: string]: {
@@ -55,7 +55,7 @@ io.on("connection", (socket) => {
 		socket.join(data.room);
 		socket.leave("lobby");
 		io.to(socket.id).emit("create_join_room", data.room);
-		
+
 		GameRoomState = {
 			...GameRoomState,
 			[data.room]: {
@@ -66,7 +66,7 @@ io.on("connection", (socket) => {
 
 		const game = new GameController(data.room, GameRoomState[data.room].clients, socket);
 		GameRoomState[data.room].controller = game;
-		
+
 
 		const rooms = Array.from(io.sockets.adapter.rooms.keys()).filter(room => !clients.includes(room));
 		io.emit('room_update', rooms);
@@ -83,19 +83,20 @@ io.on("connection", (socket) => {
 				{ [socket.id]: data.name }
 			]
 		}
+		GameRoomState[data.room].controller?.playerJoined({ [socket.id]: data.name })
 	});
 
-		socket.on('start_game', data => {
-			GameRoomState[data.room].controller?.roundStart();			
-		});
+	socket.on('start_game', data => {
+		GameRoomState[data.room].controller?.roundStart();			
+	});
 });
 
-	io.on("disconnect", (socket) => {
-		console.log("disconnect");
-	});
+io.on("disconnect", (socket) => {
+	console.log("disconnect");
+});
 
-	httpServer.listen(4000);
+httpServer.listen(4000);
 
-	module.exports = {
-		io,
-	}
+module.exports = {
+	io,
+}

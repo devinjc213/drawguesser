@@ -32,7 +32,6 @@ const Canvas: Component<{ socket: Socket, isDrawer: boolean }> = (props) => {
     });
 
     const handleBrushSize = (e: any) => {
-        console.log(e.target.value);
         setBrushSize(e.target.value);
     }
 
