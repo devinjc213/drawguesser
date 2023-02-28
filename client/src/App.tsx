@@ -18,8 +18,11 @@ const App: Component = () => {
 	const [room, setRoom] = createSignal<string>("");
 	const [name, setName] = createSignal<string>("");
 	const [chat, setChat] = createSignal<MessageType[]>([]);
+	const [drawer, setDrawer] = createSignal<string>("");
+	const [roundStarted, setRoundStarted] = createSignal<boolean>(false);
+	const [currentRoundTime, setCurrentRoundTime] = createSignal<number>(45);
 	const [message, setMessage] = createSignal<string>("");
-
+		
 	onMount(() => {
 		document.addEventListener("keypress", (e) => {
 			if (e.key === "Enter") {
@@ -47,6 +50,10 @@ const App: Component = () => {
 		setMessage("");
 	}
 
+	const handleStart = () => {
+		socket.emit('start_game', { room: room() });
+	}
+
 	socket.on('message', data => {
 		if (data) setChat(chat => [...chat, { name: data.name, msg: data.msg }]);
 	});
@@ -54,22 +61,39 @@ const App: Component = () => {
 	socket.on('create_join_room', room => {
 		setRoom(room);
 	})
+	socket.on('round_start', data => {
+		setChat(chat => [...chat, { name: 'SERVER', msg: data.msg}]);
+		setDrawer(data.drawer);
+		setRoundStarted(true);
+	})
+	
+	socket.on('word_guessed', (msg: string) => {	
+		setChat(chat => [...chat, { name: 'SERVER', msg: msg }]);
+	});
+
+	socket.on('round_timer', (timer: number) => {
+			setCurrentRoundTime(timer);
+	});
 
   return (
     <div class={styles.App}>
 			<Show when={!room()}>
-				<RoomBrowser getRoom={setRoom} socket={socket} />
+				<RoomBrowser getRoom={setRoom} socket={socket} name={name()} />
 			</Show>
 			<Show when={room()}> 
 				<div class={styles.gameContainer}>
 					<div class={styles.chat}>
+						{room()}{currentRoundTime()}
 						<div class={styles.chatBox}>
-							<For each={chat()}>{(msg: MessageType) => <div class={styles.chatMsg}><span>{msg.name}:</span>{msg.msg}</div>}</For>
+							<For each={chat()}>
+								{(msg: MessageType) => <div class={styles.chatMsg}><span>{msg.name}:</span>{msg.msg}</div>}
+							</For>
 						</div>
 						<input class={styles.textInput} onInput={(e) => setMessage(e.currentTarget.value)} value={message()} />
 						<button onClick={handleSendMessage}>send</button>
 					</div>
-					<Canvas socket={socket} />
+					<Canvas socket={socket} isDrawer={socket.id === Object.keys(drawer())[0]} />
+					<button onClick={() => handleStart()}>start</button>
 				</div>
 			</Show>	
 			<Show when={!name()}>
