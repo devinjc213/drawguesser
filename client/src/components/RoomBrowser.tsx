@@ -4,7 +4,7 @@ import NameModal from './NameModal';
 import styles from "./RoomBrowser.module.css";
 import type { Socket } from 'socket.io-client';
 
-const RoomBrowser: Component<{getRoom: Setter<string>, socket: Socket }> = (props) => {
+const RoomBrowser: Component<{getRoom: Setter<string>, socket: Socket , name: string }> = (props) => {
 	const [selectedRoom, setSelectedRoom] = createSignal<string>("");
 	const [roomList, setRoomList] = createSignal<string[]>([]);
 	const [showCreateModal, setShowCreateModal] = createSignal<boolean>(false);
@@ -13,11 +13,13 @@ const RoomBrowser: Component<{getRoom: Setter<string>, socket: Socket }> = (prop
 	createEffect(() => {
 		if (createRoomName()) {
 			setShowCreateModal(false);
-			props.socket.emit('create_room', createRoomName());
+			props.socket.emit('create_room', { room: createRoomName(), name: props.name });
 		}	
 	});
 
-	props.socket.on('room_update', rooms => setRoomList(rooms.filter((room: string) => room !== "lobby")));
+	props.socket.on('room_update', rooms => {
+		setRoomList(rooms.filter((room: string) => room !== "lobby"))
+	});
 
 	return (
 		<div class={styles.roomContainer}>
@@ -30,7 +32,7 @@ const RoomBrowser: Component<{getRoom: Setter<string>, socket: Socket }> = (prop
 			</div>
 			<button onClick={() => {
 				props.getRoom(selectedRoom());
-				props.socket.emit('join_room', selectedRoom());
+				props.socket.emit('join_room', { name: props.name, room: selectedRoom() } );
 			}}>Join</button>
 			<button onClick={() => setShowCreateModal(true)}>Create</button>
 			<Show when={showCreateModal()}>

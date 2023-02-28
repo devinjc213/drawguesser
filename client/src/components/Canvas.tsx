@@ -1,9 +1,11 @@
 import type { Component } from "solid-js";
 import {createSignal, onCleanup, onMount} from "solid-js";
 import type { Socket } from "socket.io-client";
+import styles from './Canvas.module.css';
 
-const Canvas: Component<{ socket: Socket}> = (props) => {
-    const [drawColor, setDrawColor] = createSignal<string>("#aaaaaa");
+const Canvas: Component<{ socket: Socket, isDrawer: boolean }> = (props) => {
+    const [drawColor, setDrawColor] = createSignal<string>("#000");
+    const [brushSize, setBrushSize] = createSignal<number>(5);
     const [pos, setPos] = createSignal<{ x: number, y: number}>({x:0,y:0});
     let rect: any;
     let canvas: any;
@@ -29,6 +31,15 @@ const Canvas: Component<{ socket: Socket}> = (props) => {
         document.removeEventListener('mouseEnter', handlePos);
     });
 
+    const handleBrushSize = (e: any) => {
+        setBrushSize(e.target.value);
+    }
+
+    const handleClear = () => {
+        ctx.fillStyle = "white";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
     const handlePos = (e: any) => {
         rect = canvas.getBoundingClientRect();
 
@@ -39,10 +50,10 @@ const Canvas: Component<{ socket: Socket}> = (props) => {
     }
 
     const draw = (e: any) => {
-        if (e.buttons !== 1) return;
+        if (e.buttons !== 1 || !props.isDrawer) return;
         ctx.beginPath();
 
-        ctx.lineWidth = 5;
+        ctx.lineWidth = brushSize();
         ctx.lineCap = 'round';
         ctx.strokeStyle = drawColor();
 
@@ -52,19 +63,19 @@ const Canvas: Component<{ socket: Socket}> = (props) => {
 
         ctx.stroke();
 
-        props.socket.emit('canvas_emit', { x: pos().x, y: pos().y, color: drawColor(), id: props.socket.id });
+        props.socket.emit('canvas_emit', { x: pos().x, y: pos().y, color: drawColor(), brushSize: brushSize(), id: props.socket.id });
     };
 
     const clearPos = () => {
         setPos({ x: 0, y: 0 });
         props.socket.emit('clear_pos', true);
     }
-    const emitDraw = (x: number, y: number) => {
+    const emitDraw = (x: number, y: number, color: string, brushSize: number) => {
         ctx.beginPath();
 
-        ctx.lineWidth = 5;
+        ctx.lineWidth = brushSize;
         ctx.lineCap = 'round';
-        ctx.strokeStyle = drawColor();
+        ctx.strokeStyle = color;
 
         if (lastX && lastY) {
             ctx.moveTo(lastX, lastY);
@@ -78,7 +89,7 @@ const Canvas: Component<{ socket: Socket}> = (props) => {
     }
 
     props.socket.on('canvas_emit', data => {
-        if (data.id !== props.socket.id) emitDraw(data.x, data.y);
+        if (data.id !== props.socket.id) emitDraw(data.x, data.y, data.color, data.brushSize);
     });
 
     props.socket.on('clear_pos', clearPos => {
@@ -86,8 +97,48 @@ const Canvas: Component<{ socket: Socket}> = (props) => {
         lastY = 0;
     });
 
+    props.socket.on('clear_canvas', (data) => {
+        if (data.id !== props.socket.id) handleClear();
+    });
+
     return (
-        <canvas ref={canvas} width="750" height="500"></canvas>
+        <div class={styles.canvasContainer}>
+            <canvas ref={canvas} width="750" height="600"></canvas>
+            <div class={styles.controls}>
+                <div class={styles.colorContainer}>
+                    <div class={styles.colorRow}>
+                        <div class={styles.colorSquare} style={{background: "#000"}} onclick={() => setDrawColor("#000")} />
+                        <div class={styles.colorSquare} style={{background: "#545454"}} onclick={() => setDrawColor("#545454")} />
+                        <div class={styles.colorSquare} style={{background: "#804000"}} onclick={() => setDrawColor("#804000")} />
+                        <div class={styles.colorSquare} style={{background: "#FE0000"}} onclick={() => setDrawColor("#FE0000")} />
+                        <div class={styles.colorSquare} style={{background: "#FE6A00"}} onclick={() => setDrawColor("#FE6A00")} />
+                        <div class={styles.colorSquare} style={{background: "#FFD800"}} onclick={() => setDrawColor("#FFD800")} />
+                        <div class={styles.colorSquare} style={{background: "#00FE20"}} onclick={() => setDrawColor("#00FE20")} />
+                        <div class={styles.colorSquare} style={{background: "#0094FE"}} onclick={() => setDrawColor("#0094FE")} />
+                        <div class={styles.colorSquare} style={{background: "#0026FF"}} onclick={() => setDrawColor("#0026FF")} />
+                        <div class={styles.colorSquare} style={{background: "#B100FE"}} onclick={() => setDrawColor("#B100FE")} />
+                    </div>
+                    <div class={styles.colorRow}>
+                        <div class={styles.colorSquare} style={{background: "#fff"}} onclick={() => setDrawColor("#fff")} />
+                        <div class={styles.colorSquare} style={{background: "#A8A8A8"}} onclick={() => setDrawColor("#A8A8A8")} />
+                        <div class={styles.colorSquare} style={{background: "#401F00"}} onclick={() => setDrawColor("#401F00")} />
+                        <div class={styles.colorSquare} style={{background: "#800001"}} onclick={() => setDrawColor("#800001")} />
+                        <div class={styles.colorSquare} style={{background: "#803400"}} onclick={() => setDrawColor("#803400")} />
+                        <div class={styles.colorSquare} style={{background: "#806B00"}} onclick={() => setDrawColor("#806B00")} />
+                        <div class={styles.colorSquare} style={{background: "#007F0E"}} onclick={() => setDrawColor("#007F0E")} />
+                        <div class={styles.colorSquare} style={{background: "#00497E"}} onclick={() => setDrawColor("#00497E")} />
+                        <div class={styles.colorSquare} style={{background: "#001280"}} onclick={() => setDrawColor("#001280")} />
+                        <div class={styles.colorSquare} style={{background: "#590080"}} onclick={() => setDrawColor("#590080")} />
+                    </div>
+                </div>
+                <input type="range" min="1" max="50" step="1" value={brushSize()} onChange={(e) => handleBrushSize(e)} />
+                <button onClick={() => {
+                    handleClear();
+                    props.socket.emit("clear_canvas", true);
+                }}>Clear</button>
+            </div>
+        </div>
+
     );
 }
 

@@ -1,0 +1,22 @@
+.canvasContainer {}
+
+.controls {
+    display: flex;
+    justify-content: space-around;
+}
+
+.colorSquare {
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+}
+
+.colorContainer {
+    padding: 0.25rem;
+    background: white;
+}
+
+.colorRow {
+    display: flex;
+}
+
