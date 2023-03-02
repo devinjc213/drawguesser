@@ -98,15 +98,14 @@ export default class GameController {
   
   playerLeft(id: string) {
     const playerIndex = this.players.findIndex(player => Object.keys(player)[0] === id);
-    console.log(playerIndex);
-    if (this.drawer === this.players[playerIndex] && playerIndex < this.players.length) {
+
+    if (this.drawer === this.players[playerIndex] && playerIndex < this.players.length - 1) {
       this.drawer = this.players[playerIndex + 1];
     } else {
       this.drawer = this.players[0];
     }
-    console.log(this.players);
+
     this.players = this.players.filter(player => Object.keys(player)[0] !== id);
-    console.log(this.players);
     io.to(this.room).emit('players_in_room', this.players);
   }
 
