@@ -9,6 +9,7 @@ import styles from './App.module.css';
 
 const socket = io("http://localhost:4000"); 
 
+type UserAndSocket = { [key: string]: string }
 type MessageType = {
 	name: string
 	msg: string
@@ -21,7 +22,11 @@ const App: Component = () => {
 	const [drawer, setDrawer] = createSignal<string>("");
 	const [roundStarted, setRoundStarted] = createSignal<boolean>(false);
 	const [currentRoundTime, setCurrentRoundTime] = createSignal<number>(45);
+  const [playersInRoom, setPlayersInRoom] = createSignal<UserAndSocket[]>([]);
+  const [currentIntermissionTimer, setCurrentIntermissionTimer] =
+    createSignal<number>();
 	const [message, setMessage] = createSignal<string>("");
+
 		
 	onMount(() => {
 		document.addEventListener("keypress", (e) => {
@@ -44,7 +49,7 @@ const App: Component = () => {
 	});
 
 	const handleSendMessage = () => {
-		if (!message()) return;
+		if (!message() || (drawer() && roundStarted())) return;
 
 		socket.emit('message', { name: name(), msg: message(), room: room() });
 		setMessage("");
@@ -60,6 +65,7 @@ const App: Component = () => {
 
 	socket.on('create_join_room', room => {
 		setRoom(room);
+    setPlayersInRoom([{ [socket.id]: name() }])
 	})
 	socket.on('round_start', data => {
 		setChat(chat => [...chat, { name: 'SERVER', msg: data.msg}]);
@@ -72,8 +78,20 @@ const App: Component = () => {
 	});
 
 	socket.on('round_timer', (timer: number) => {
-			setCurrentRoundTime(timer);
+		setCurrentRoundTime(timer);
 	});
+
+  socket.on('intermission_timer', (timer: number) => {
+    setCurrentIntermissionTimer(timer);
+  });
+
+  socket.on('players_guessed_correct', (players) => {
+    setChat(chat => [...chat, { name: 'SERVER', msg: `${Object.values(players.join(', '))} guessed correctly!` }])
+  });
+
+  socket.on('players_in_room', (players) => {
+    setPlayersInRoom(players);
+  });
 
   return (
     <div class={styles.App}>
@@ -82,8 +100,15 @@ const App: Component = () => {
 			</Show>
 			<Show when={room()}> 
 				<div class={styles.gameContainer}>
+          <div class={styles.playersInRoom}>
+            {playersInRoom().map(player => (
+              <div>
+                {Object.values(player)}
+              </div>
+             ))}
+          </div>
 					<div class={styles.chat}>
-						{room()}{currentRoundTime()}
+            {room()}{currentRoundTime()}{currentIntermissionTimer()}
 						<div class={styles.chatBox}>
 							<For each={chat()}>
 								{(msg: MessageType) => <div class={styles.chatMsg}><span>{msg.name}:</span>{msg.msg}</div>}

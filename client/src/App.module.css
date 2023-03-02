@@ -6,6 +6,11 @@
 	background-image: linear-gradient(to bottom, #200869, #3b5182); 
 }
 
+.playersInRoom {
+  display: flex;
+  flex-direction: column;
+}
+
 .chatMsg {
 	display: flex;
 }

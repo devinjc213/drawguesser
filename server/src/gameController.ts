@@ -3,7 +3,7 @@ import type { Socket } from 'socket.io'
 
 export default class GameController {
 	private room: string;
-	private clients: UserAndSocket[];
+	public players: UserAndSocket[];
 	private socket: Socket;
 	private numberOfPlayers: number;
 	private drawer: UserAndSocket;
@@ -14,42 +14,63 @@ export default class GameController {
 	private intermissionTimer: number;
 	private currentIntermissionTimer: number;
 	private numberOfRounds: number;
-	private words: string[]
+	private words: string[];
+  private playersGuessedCorrect: UserAndSocket[];
 	private interval: any;
 
-	constructor(room: string, clients: UserAndSocket[], socket: Socket) {
+	constructor(room: string, players: UserAndSocket[], socket: Socket) {
 		this.room = room;
-		this.clients = clients;
+		this.players = players;
 		this.socket = socket;
 		this.numberOfPlayers = 8;
-		this.drawer = clients[0];
+		this.drawer = players[0];
 		this.roundIsStarted = false;
 		this.currentRound = 1;
-		this.roundTimer = 45;
+		this.roundTimer = 15;
 		this.currentRoundTimer = this.roundTimer;
 		this.intermissionTimer = 10;
 		this.currentIntermissionTimer = this.intermissionTimer;
 		this.numberOfRounds = 3;
 		this.words = ["apple"];
+    this.playersGuessedCorrect = [];
 		this.interval = null;
+
+
+    io.to(this.room).emit('players_in_room', this.drawer);
 	}
 
-	countdown() {	
-		if (this.currentRoundTimer > 0) this.currentRoundTimer -= 1;
-		else {
-			clearInterval(this.interval);
-			this.roundEnd();
-		}
+	countdown(cdType: "round" | "intermission") {	
+    if (cdType === "round") {
+      if (this.currentRoundTimer > 0) this.currentRoundTimer -= 1;
+      else {
+        clearInterval(this.interval);
+        this.roundEnd();
+      }
 
-		io.to(this.room).emit('round_timer', this.currentRoundTimer);
+      io.to(this.room).emit('round_timer', this.currentRoundTimer);
+
+    } else if (cdType === "intermission") { 
+      if (this.currentIntermissionTimer > 0) this.currentIntermissionTimer -= 1;
+      else {
+        clearInterval(this.interval);
+        this.roundStart();
+      }
+
+      io.to(this.room).emit('intermission_timer', this.currentIntermissionTimer);
+    
+    }
 	}
 
-	handleMessage({ name, msg, room }: MessageType) {
+	handleMessage({ socketId, name, msg, room }: MessageType) {
 		if (!this.roundIsStarted) {
 			io.to(room).emit("message", { name, msg });
 		} else {
 			if (msg === this.words[0]) {
-				io.to(this.room).emit('word_guessed', `${name} guessed the word!`);
+				io.to(this.room).emit('server_message', `${name} guessed the word!`);
+        this.playersGuessedCorrect.push({ [socketId]: name });
+        if (this.playersGuessedCorrect.length === this.players.length) {
+          io.to(this.room).emit('server_message', )
+        }
 			} else {
 				io.to(room).emit("message", { name, msg });
 			}	
@@ -71,15 +92,30 @@ export default class GameController {
 	}
 
 	playerJoined(player: UserAndSocket) {
-		this.clients = [...this.clients, player];
+		this.players = [...this.players, player];
+    io.to(this.room).emit('players_in_room', this.players);
 	}
+  
+  playerLeft(id: string) {
+    const playerIndex = this.players.findIndex(player => Object.keys(player)[0] === id);
+    console.log(playerIndex);
+    if (this.drawer === this.players[playerIndex] && playerIndex < this.players.length) {
+      this.drawer = this.players[playerIndex + 1];
+    } else {
+      this.drawer = this.players[0];
+    }
+    console.log(this.players);
+    this.players = this.players.filter(player => Object.keys(player)[0] !== id);
+    console.log(this.players);
+    io.to(this.room).emit('players_in_room', this.players);
+  }
 
 	roundStart() {
-		console.log('round start');
 		this.roundIsStarted = true;
-		this.interval = setInterval(this.countdown.bind(this), 1000);
-		this.clients = this.shuffle(this.clients);
-		this.countdown();
+    this.currentIntermissionTimer = this.intermissionTimer;
+		this.interval = setInterval(this.countdown.bind(this, "round"), 1000);
+		this.players = this.shuffle(this.players);
+		this.countdown("round");
 		io.to(this.room).emit('round_start', {
 			drawer: this.drawer,
 			msg: `Round has started. ${Object.values(this.drawer)[0]} is drawing`
@@ -87,10 +123,20 @@ export default class GameController {
 	}
 
 
-	intermission() {}
+	intermission() {
+    if (this.playersGuessedCorrect.length > 0) {
+      io.to(this.room).emit('server_message', Object.values(this.playersGuessedCorrect));
+    }
+    this.interval = setInterval(this.countdown.bind(this, "intermission"), 1000);
+    this.countdown("intermission");
+    io.to(this.room).emit('intermission_timer', this.currentIntermissionTimer);
+    this.playersGuessedCorrect = [];
+  }
 
 	roundEnd() {
 		this.currentRoundTimer = this.roundTimer;
+    this.intermission();
+    this.currentRound++;
 	}
 }
 
