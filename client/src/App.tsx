@@ -13,6 +13,7 @@ type UserAndSocket = { [key: string]: string }
 type MessageType = {
 	name: string
 	msg: string
+  serverMsg?: boolean
 }
 
 const App: Component = () => {
@@ -20,6 +21,7 @@ const App: Component = () => {
 	const [name, setName] = createSignal<string>("");
 	const [chat, setChat] = createSignal<MessageType[]>([]);
 	const [drawer, setDrawer] = createSignal<string>("");
+  const [currentRound, setCurrentRound] = createSignal<number>(1);
 	const [roundStarted, setRoundStarted] = createSignal<boolean>(false);
 	const [currentRoundTime, setCurrentRoundTime] = createSignal<number>(45);
   const [playersInRoom, setPlayersInRoom] = createSignal<UserAndSocket[]>([]);
@@ -49,7 +51,7 @@ const App: Component = () => {
 	});
 
 	const handleSendMessage = () => {
-		if (!message() || (drawer() && roundStarted())) return;
+		if (!message() || (drawer() === name() && roundStarted())) return;
 
 		socket.emit('message', { name: name(), msg: message(), room: room() });
 		setMessage("");
@@ -63,20 +65,20 @@ const App: Component = () => {
 		if (data) setChat(chat => [...chat, { name: data.name, msg: data.msg }]);
 	});
 
+  socket.on('server_message', msg => {
+      setChat(chat => [...chat, { name: 'SERVER', msg: msg, serverMsg: true }]);
+  });
+
 	socket.on('create_join_room', room => {
 		setRoom(room);
     setPlayersInRoom([{ [socket.id]: name() }])
 	})
 	socket.on('round_start', data => {
-		setChat(chat => [...chat, { name: 'SERVER', msg: data.msg}]);
+		setChat(chat => [...chat, { name: 'SERVER', msg: data.msg, serverMsg: true }]);
 		setDrawer(data.drawer);
 		setRoundStarted(true);
 	})
 	
-	socket.on('word_guessed', (msg: string) => {	
-		setChat(chat => [...chat, { name: 'SERVER', msg: msg }]);
-	});
-
 	socket.on('round_timer', (timer: number) => {
 		setCurrentRoundTime(timer);
 	});
@@ -85,12 +87,13 @@ const App: Component = () => {
     setCurrentIntermissionTimer(timer);
   });
 
-  socket.on('players_guessed_correct', (players) => {
-    setChat(chat => [...chat, { name: 'SERVER', msg: `${Object.values(players.join(', '))} guessed correctly!` }])
-  });
-
   socket.on('players_in_room', (players) => {
     setPlayersInRoom(players);
+  });
+
+  socket.on('round_end', (curRound) => {
+      setRoundStarted(false);
+      setCurrentRound(curRound);
   });
 
   return (
@@ -111,7 +114,17 @@ const App: Component = () => {
             {room()}{currentRoundTime()}{currentIntermissionTimer()}
 						<div class={styles.chatBox}>
 							<For each={chat()}>
-								{(msg: MessageType) => <div class={styles.chatMsg}><span>{msg.name}:</span>{msg.msg}</div>}
+								{(msg: MessageType) => {
+                  if (msg.serverMsg) {
+                    return <div><b>{msg.msg}</b></div>;
+                  } else {
+                    return (
+                      <div class={styles.chatMsg}>
+                        <span>{msg.name}:</span>{msg.msg}
+                      </div>
+                    )
+                  } 
+                }}
 							</For>
 						</div>
 						<input class={styles.textInput} onInput={(e) => setMessage(e.currentTarget.value)} value={message()} />

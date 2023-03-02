@@ -69,7 +69,7 @@ export default class GameController {
 				io.to(this.room).emit('server_message', `${name} guessed the word!`);
         this.playersGuessedCorrect.push({ [socketId]: name });
         if (this.playersGuessedCorrect.length === this.players.length) {
-          io.to(this.room).emit('server_message', )
+          io.to(this.room).emit('server_message', 'All users have guessed the word!');
         }
 			} else {
 				io.to(room).emit("message", { name, msg });
@@ -124,7 +124,8 @@ export default class GameController {
 
 	intermission() {
     if (this.playersGuessedCorrect.length > 0) {
-      io.to(this.room).emit('server_message', Object.values(this.playersGuessedCorrect));
+      io.to(this.room).emit('server_message', `${Object.values(this.playersGuessedCorrect)
+        .join(', ')} guessed correctly!`);
     }
     this.interval = setInterval(this.countdown.bind(this, "intermission"), 1000);
     this.countdown("intermission");
@@ -136,6 +137,7 @@ export default class GameController {
 		this.currentRoundTimer = this.roundTimer;
     this.intermission();
     this.currentRound++;
+    io.to(this.room).emit('round_end', this.currentRound);
 	}
 }
 
