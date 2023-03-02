@@ -6,10 +6,7 @@ export type UserAndSocket = { [key: string]: string };
 export type MessageType = { socketId: string, name: string, msg: string, room: string };
 
 type GameRoomType = {
-	[key: string]: {
-		controller: GameController | null
-		clients: UserAndSocket[]
-	}
+	[key: string]: GameController
 }
 
 const httpServer = createServer();
@@ -30,7 +27,7 @@ io.on("connection", (socket) => {
 	io.emit('room_update', rooms);
 
 	socket.on("message", (data) => {
-		GameRoomState[data.room].controller?.handleMessage(data);
+		GameRoomState[data.room].handleMessage(data);
 	});
 
 	socket.on("canvas_emit", (data) => {
@@ -56,16 +53,9 @@ io.on("connection", (socket) => {
 		socket.leave("lobby");
 		io.to(socket.id).emit("create_join_room", data.room);
 
-		GameRoomState = {
-			...GameRoomState,
-			[data.room]: {
-				controller: null,
-				clients: [{ [socket.id]: data.name }]
-			},
-		}
 
-		const game = new GameController(data.room, GameRoomState[data.room].clients, socket);
-		GameRoomState[data.room].controller = game;
+		const game = new GameController(data.room, [{ [socket.id]: data.name }], socket);
+		GameRoomState[data.room] = game;
 
 
 		const rooms = Array.from(io.sockets.adapter.rooms.keys())
@@ -78,32 +68,24 @@ io.on("connection", (socket) => {
 		socket.join(data.room);
 		socket.leave("lobby");
 		io.to(data.room).emit('user_joined', data.name);
-		GameRoomState[data.room] = {
-			...GameRoomState[data.room],
-			clients: [
-				...GameRoomState[data.room].clients,
-				{ [socket.id]: data.name }
-			]
-		}
-		GameRoomState[data.room].controller?.playerJoined({ [socket.id]: data.name })
+		GameRoomState[data.room].playerJoined({ [socket.id]: data.name })
 	});
 
 	socket.on('start_game', data => {
-		GameRoomState[data.room].controller?.roundStart();			
+		GameRoomState[data.room].roundStart();			
 	});
 
   socket.on('disconnecting', () => {
     const room = Array.from(socket.rooms)[1];
-    GameRoomState[room].controller?.playerLeft(socket.id); 
+    GameRoomState[room].playerLeft(socket.id); 
   });
 
   socket.on('disconnect', () => {
     for (const game in GameRoomState) {
-      if (GameRoomState[game].controller?.players.length === 0) {
+      if (GameRoomState[game].players.length === 0) {
         delete GameRoomState[game]
       }
     }
-    console.log(GameRoomState);
   });
 });
 

@@ -10,7 +10,7 @@ export default class GameController {
 	private roundIsStarted: boolean;
 	private currentRound: number;
 	private roundTimer: number;
-	private currentRoundTimer;
+	private currentRoundTimer: number;
 	private intermissionTimer: number;
 	private currentIntermissionTimer: number;
 	private numberOfRounds: number;
