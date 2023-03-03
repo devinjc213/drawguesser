@@ -1,8 +1,16 @@
-.canvasContainer {}
+.canvasContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
 
 .controls {
-    display: flex;
-    justify-content: space-around;
+  display: flex;
+  justify-content: space-around;
+  background: #7b7484;
+  border-radius: 8px;
+  padding: 1.25rem 0.5rem;
+  margin-bottom: 0.4rem;
 }
 
 .colorSquare {
@@ -12,11 +20,65 @@
 }
 
 .colorContainer {
-    padding: 0.25rem;
-    background: white;
+  display: flex;
+  flex-direction: column;
+  padding: 0.25rem;
+  background: #7b7484;
+  border-radius: 8px;
 }
 
 .colorRow {
-    display: flex;
+  display: flex;
+}
+
+.canvasWrapper {
+  background: #7b7484;
+  border-radius: 8px;
+  padding: 0.5rem;
+}
+
+.paintTools {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  background: #4a4453;
+  border-radius: 8px;
+  padding: 0 1rem;
+}
+
+.paintTools > img {
+  cursor: pointer;
+}
+
+.activeToolLeft {
+  background: #B0A8B9;
+  position: relative;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-left: -1rem;
+}
+
+
+.activeToolRight {
+  background: #B0A8B9;
+  position: relative;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-right: -1rem;
+}
+
+
+.brushSizeContainer {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.brushSizeContainer > input {
+  margin-bottom: -1rem; 
 }
 
