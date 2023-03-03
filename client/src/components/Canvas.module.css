@@ -7,7 +7,7 @@
 .controls {
   display: flex;
   justify-content: space-around;
-  background: #7b7484;
+  background: #4D8076;
   border-radius: 8px;
   padding: 1.25rem 0.5rem;
   margin-bottom: 0.4rem;
@@ -32,7 +32,7 @@
 }
 
 .canvasWrapper {
-  background: #7b7484;
+  background: #4D8076;
   border-radius: 8px;
   padding: 0.5rem;
 }

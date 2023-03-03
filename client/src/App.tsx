@@ -4,6 +4,7 @@ import { io } from "socket.io-client";
 import NameModal from './components/NameModal';
 import RoomBrowser from './components/RoomBrowser';
 import Canvas from './components/Canvas';
+import { Icons } from './assets/Icons';
 
 import styles from './App.module.css';
 
@@ -17,14 +18,14 @@ type MessageType = {
 }
 
 const App: Component = () => {
-	const [room, setRoom] = createSignal<string>("");
+	const [room, setRoom] = createSignal<string>("test");
 	const [name, setName] = createSignal<string>("");
 	const [chat, setChat] = createSignal<MessageType[]>([]);
 	const [drawer, setDrawer] = createSignal<string>("");
   const [currentRound, setCurrentRound] = createSignal<number>(1);
 	const [roundStarted, setRoundStarted] = createSignal<boolean>(false);
 	const [currentRoundTime, setCurrentRoundTime] = createSignal<number>(45);
-  const [playersInRoom, setPlayersInRoom] = createSignal<UserAndSocket[]>([]);
+  const [playersInRoom, setPlayersInRoom] = createSignal<UserAndSocket[]>([{ ['asdf']: 'Bob' }]);
   const [currentIntermissionTimer, setCurrentIntermissionTimer] =
     createSignal<number>();
 	const [message, setMessage] = createSignal<string>("");
@@ -103,40 +104,61 @@ const App: Component = () => {
 			</Show>
 			<Show when={room()}> 
 				<div class={styles.gameContainer}>
-          <div class={styles.playersInRoom}>
-            {playersInRoom().map(player => (
-              <div>
-                {Object.values(player)}
-              </div>
-             ))}
+          <div class={styles.topBar}>
+            <div>
+              {`${room()} - Round ${currentRound()}`}
+            </div>
+            <div>
+              Hint
+            </div>
           </div>
-					<div class={styles.chat}>
-            {room()}{currentRoundTime()}{currentIntermissionTimer()}
-						<div class={styles.chatBox}>
-							<For each={chat()}>
-								{(msg: MessageType) => {
-                  if (msg.serverMsg) {
-                    return <div><b>{msg.msg}</b></div>;
-                  } else {
-                    return (
-                      <div class={styles.chatMsg}>
-                        <span>{msg.name}:</span>{msg.msg}
+          <div class={styles.gameBody}>
+            <div class={styles.leftColumn}>
+              <div class={styles.playersWrapper}>
+                <div class={styles.playersInRoom}>
+                  <For each={playersInRoom()}>
+                    {(player: UserAndSocket) => (
+                      <div class={styles.playerNameWrapper}>
+                        {Object.values(player)[0]}
                       </div>
-                    )
-                  } 
-                }}
-							</For>
-						</div>
-						<input class={styles.textInput} onInput={(e) => setMessage(e.currentTarget.value)} value={message()} />
-						<button onClick={handleSendMessage}>send</button>
-					</div>
-					<Canvas socket={socket} isDrawer={socket.id === Object.keys(drawer())[0]} />
-					<button onClick={() => handleStart()}>start</button>
+                    )}
+                  </For>  
+                </div>
+              </div>
+              <img src={Icons.LeaveRoom} alt="Leave room" />
+            </div>
+            <div class={styles.chatWrapper}>
+              <div class={styles.chat}>
+                  <For each={chat()}>
+                    {(msg: MessageType) => {
+                      if (msg.serverMsg) {
+                        return <div><b>{msg.msg}</b></div>;
+                      } else {
+                        return (
+                          <div class={styles.chatMsg}>
+                            <span>{msg.name}:</span>{msg.msg}
+                          </div>
+                        )
+                      } 
+                    }}
+                </For>
+              </div>  
+              <div class={styles.sendMsgWrapper}>
+                <input
+                  class={styles.textInput}
+                  onInput={(e) => setMessage(e.currentTarget.value)}
+                  value={message()} 
+                />
+                <button class={styles.sendBtn} onClick={handleSendMessage}>Send</button>
+              </div>
+            </div>
+            <Canvas socket={socket} isDrawer={socket.id === Object.keys(drawer())[0]} />
+          </div>
 				</div>
 			</Show>	
-			<Show when={!name()}>
+			{/*<Show when={!name()}>
 				<NameModal getName={setName} />
-			</Show>
+			</Show>*/}
     </div>
   );
 };
