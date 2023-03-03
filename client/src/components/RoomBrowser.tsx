@@ -1,12 +1,12 @@
-import { createSignal, createEffect, Show } from "solid-js";
+import { createSignal, createEffect, Show, For } from "solid-js";
 import type { Component, Setter } from 'solid-js';
 import NameModal from './NameModal';
 import styles from "./RoomBrowser.module.css";
 import type { Socket } from 'socket.io-client';
 
-const RoomBrowser: Component<{getRoom: Setter<string>, socket: Socket , name: string }> = (props) => {
+const RoomBrowser: Component<{getRoom: Setter<string>, socket: Socket , name: string, initialRooms: string[] }> = (props) => {
 	const [selectedRoom, setSelectedRoom] = createSignal<string>("");
-	const [roomList, setRoomList] = createSignal<string[]>([]);
+	const [roomList, setRoomList] = createSignal<string[]>(props.initialRooms);
 	const [showCreateModal, setShowCreateModal] = createSignal<boolean>(false);
 	const [createRoomName, setCreateRoomName] = createSignal<string>("");
 
@@ -18,23 +18,36 @@ const RoomBrowser: Component<{getRoom: Setter<string>, socket: Socket , name: st
 	});
 
 	props.socket.on('room_update', rooms => {
-		setRoomList(rooms.filter((room: string) => room !== "lobby"))
+		setRoomList(rooms);
 	});
 
 	return (
 		<div class={styles.roomContainer}>
 			<div class={styles.roomList}>
-				{roomList().length > 0 && roomList().map(room => (
-					<div class={selectedRoom() === room ? `${styles.roomName} ${styles.selected}` : styles.roomName} onClick={() => setSelectedRoom(room)}>
-						{room}
-					</div>
-				))}
+        <For each={roomList()}>
+          {(room: string) => ( 
+            <div 
+              class={selectedRoom() === room ? `${styles.roomName} ${styles.selected}` : styles.roomName}
+              onClick={() => setSelectedRoom(room)}
+            >
+              {room}
+            </div> 
+          )}
+        </For>
 			</div>
-			<button onClick={() => {
-				props.getRoom(selectedRoom());
-				props.socket.emit('join_room', { name: props.name, room: selectedRoom() } );
-			}}>Join</button>
-			<button onClick={() => setShowCreateModal(true)}>Create</button>
+      <div class={styles.btnRow}>
+        <button
+          onClick={() => {
+            props.getRoom(selectedRoom());
+            props.socket.emit('join_room', { name: props.name, room: selectedRoom() } );
+          }}
+          class={selectedRoom() ? styles.btn : `${styles.btn} ${styles.btnDisabled}`}
+          disabled={!selectedRoom()}
+        >
+            Join
+          </button>
+        <button class={styles.btn} onClick={() => setShowCreateModal(true)}>Create</button>
+      </div>
 			<Show when={showCreateModal()}>
 				<NameModal getName={setCreateRoomName} /> 
 			</Show>

@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   version="1.1"
+   width="24pt"
+   height="24pt"
+   id="svg3261">
+  <metadata
+     id="metadata3">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:title></dc:title>
+        <dc:description />
+        <dc:subject>
+          <rdf:Bag>
+            <rdf:li>hash</rdf:li>
+            <rdf:li />
+            <rdf:li>action</rdf:li>
+            <rdf:li>computer</rdf:li>
+            <rdf:li>icons</rdf:li>
+            <rdf:li>theme</rdf:li>
+          </rdf:Bag>
+        </dc:subject>
+        <dc:publisher>
+          <cc:Agent
+             rdf:about="http://www.openclipart.org">
+            <dc:title>Andy Fitzsimon</dc:title>
+          </cc:Agent>
+        </dc:publisher>
+        <dc:creator>
+          <cc:Agent>
+            <dc:title>Andy Fitzsimon</dc:title>
+          </cc:Agent>
+        </dc:creator>
+        <dc:rights>
+          <cc:Agent>
+            <dc:title>Andy Fitzsimon</dc:title>
+          </cc:Agent>
+        </dc:rights>
+        <dc:date />
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <cc:license
+           rdf:resource="http://web.resource.org/cc/PublicDomain" />
+        <dc:language>en</dc:language>
+      </cc:Work>
+      <cc:License
+         rdf:about="http://web.resource.org/cc/PublicDomain">
+        <cc:permits
+           rdf:resource="http://web.resource.org/cc/Reproduction" />
+        <cc:permits
+           rdf:resource="http://web.resource.org/cc/Distribution" />
+        <cc:permits
+           rdf:resource="http://web.resource.org/cc/DerivativeWorks" />
+      </cc:License>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs3263">
+    <linearGradient
+       x1="-0.10588"
+       y1="-0.10497"
+       x2="0.58431"
+       y2="0.55249"
+       id="linearGradient2222"
+       xlink:href="#linearGradient1513" />
+    <linearGradient
+       x1="0.47451001"
+       y1="0.21771"
+       x2="0.80391997"
+       y2="0.52029997"
+       id="linearGradient2316">
+      <stop
+         id="stop2318"
+         style="stop-color:#edc071;stop-opacity:1"
+         offset="0" />
+      <stop
+         id="stop2322"
+         style="stop-color:#fbefdb;stop-opacity:1"
+         offset="0.25769001" />
+      <stop
+         id="stop2320"
+         style="stop-color:#e49d22;stop-opacity:1"
+         offset="0.70594001" />
+      <stop
+         id="stop2321"
+         style="stop-color:#edbf6f;stop-opacity:1"
+         offset="0.73347002" />
+      <stop
+         id="stop2319"
+         style="stop-color:#e9af4c;stop-opacity:1"
+         offset="1" />
+    </linearGradient>
+    <linearGradient
+       id="linearGradient1513">
+      <stop
+         id="stop1514"
+         style="stop-color:#ffffff;stop-opacity:1"
+         offset="0" />
+      <stop
+         id="stop1515"
+         style="stop-color:#ffffff;stop-opacity:0"
+         offset="1" />
+    </linearGradient>
+    <linearGradient
+       x1="0.41569"
+       y1="0.27687001"
+       x2="0.59608001"
+       y2="0.44299999"
+       id="linearGradient2121"
+       xlink:href="#linearGradient1513" />
+    <radialGradient
+       fx="0.18039"
+       fy="0.47916999"
+       id="radialGradient1502">
+      <stop
+         id="stop1919"
+         style="stop-color:#000000;stop-opacity:0.31637999"
+         offset="0" />
+      <stop
+         id="stop1920"
+         style="stop-color:#000000;stop-opacity:0.079096"
+         offset="0.5" />
+      <stop
+         id="stop1921"
+         style="stop-color:#000000;stop-opacity:0"
+         offset="1" />
+    </radialGradient>
+  </defs>
+  <g
+     transform="matrix(1.4859,0,0,1.4859,0.037969,-0.11509)"
+     id="g3664"
+     style="fill-rule:evenodd">
+    <path
+       d="m 54.439,37.866 a 12.563,12.563 0 1 0 -25.126,0 12.563,12.563 0 1 0 25.126,0 z"
+       transform="matrix(0.74091,0,0,0.13637,-20.773,12.915)"
+       id="path1934"
+       style="fill:url(#radialGradient1502);stroke-width:1pt" />
+    <path
+       d="m 5.1124,15.088 c 2.5318,-4.155 11.088,-14.236 13.239,-14.741 2.114,-0.49593 1.775,0.7818 1.141,1.794 -0.645,1.029 -3.458,6.907 -12.687,13.62 -1.3705,0.464 -1.6926,-0.673 -1.6926,-0.673 z"
+       id="path2139"
+       style="fill:#c81e00;fill-opacity:1;stroke-width:0.25" />
+    <path
+       d="m 0.37663,18.603 c 0,0 6.4391,1.541 6.9583,-2.039 0.5192,-3.581 -1.9917,-1.852 -3.0638,-1.769 -1.4947,0.054 -2.9655,1.604 -3.8945,3.808 z"
+       id="path2140"
+       style="fill:#c81e00;fill-opacity:1;stroke-width:0.25" />
+    <path
+       d="M 9.7456,9.468 C 11.188,7.802 16.65,1.5822 18.121,0.9138 19.56,0.26 19.71,0.75188 19.501,1.2507 19.292,1.7496 11.999,10.605 11.169,10.292 10.34,9.9792 9.7249,9.902 9.7456,9.468 z"
+       id="path2230"
+       style="fill:url(#linearGradient2121);stroke-width:0.125" />
+    <path
+       d="M 5.2263,14.482 9.4036,9.1934 C 9.8724,10.209 12.658,10.848 12.225,11.336 11.792,11.824 7.8376,15.591 7.3759,15.767 6.9141,15.943 5.005,14.674 5.2263,14.482 z"
+       id="path2141"
+       style="fill:url(#linearGradient2316);stroke-width:0.25" />
+    <path
+       d="m 0.92111,17.977 c 0,0 1.406,-2.97 3.6492,-2.713 1.695,0.167 1.5018,0.673 1.5018,0.673 0,0 -2.1279,2.298 -5.151,2.04 z"
+       id="path2247"
+       style="fill:url(#linearGradient2222);stroke-width:1pt" />
+  </g>
+</svg>

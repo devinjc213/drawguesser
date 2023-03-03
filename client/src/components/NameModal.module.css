@@ -3,13 +3,23 @@
 }
 
 .modal {
-    background: gray;
-    padding: 2rem;
-    border-radius: 4px;
-    display: flex;
-    flex-direction: column;
-    position: relative;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+  background: #564472;
+  padding: 1rem;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  text-align: center;
+}
+
+.modal > input {
+  border-radius: 8px;
+  height: 1.5rem;
+  outline: none;
+  border: none;
+  margin-top: 1rem;
 }

@@ -4,6 +4,7 @@ import { io } from "socket.io-client";
 import NameModal from './components/NameModal';
 import RoomBrowser from './components/RoomBrowser';
 import Canvas from './components/Canvas';
+import { Icons } from './assets/Icons';
 
 import styles from './App.module.css';
 
@@ -17,18 +18,18 @@ type MessageType = {
 }
 
 const App: Component = () => {
-	const [room, setRoom] = createSignal<string>("");
+	const [room, setRoom] = createSignal<string>("lobby");
 	const [name, setName] = createSignal<string>("");
 	const [chat, setChat] = createSignal<MessageType[]>([]);
 	const [drawer, setDrawer] = createSignal<string>("");
   const [currentRound, setCurrentRound] = createSignal<number>(1);
 	const [roundStarted, setRoundStarted] = createSignal<boolean>(false);
 	const [currentRoundTime, setCurrentRoundTime] = createSignal<number>(45);
-  const [playersInRoom, setPlayersInRoom] = createSignal<UserAndSocket[]>([]);
+  const [playersInRoom, setPlayersInRoom] = createSignal<UserAndSocket[]>();
   const [currentIntermissionTimer, setCurrentIntermissionTimer] =
     createSignal<number>();
 	const [message, setMessage] = createSignal<string>("");
-
+  const [initialRooms, setInitialRooms] = createSignal<string[]>();
 		
 	onMount(() => {
 		document.addEventListener("keypress", (e) => {
@@ -61,23 +62,29 @@ const App: Component = () => {
 		socket.emit('start_game', { room: room() });
 	}
 
+  const handleLeaveRoom = () => {
+    socket.emit('leave_room', { room: room(), name: name(), socketId: socket.id });
+    setRoom("lobby");
+  }
+
 	socket.on('message', data => {
 		if (data) setChat(chat => [...chat, { name: data.name, msg: data.msg }]);
 	});
 
   socket.on('server_message', msg => {
-      setChat(chat => [...chat, { name: 'SERVER', msg: msg, serverMsg: true }]);
+    setChat(chat => [...chat, { name: 'SERVER', msg: msg, serverMsg: true }]);
   });
 
 	socket.on('create_join_room', room => {
 		setRoom(room);
-    setPlayersInRoom([{ [socket.id]: name() }])
-	})
+    setPlayersInRoom([{ [socket.id]: name() }]) 
+	});
+
 	socket.on('round_start', data => {
 		setChat(chat => [...chat, { name: 'SERVER', msg: data.msg, serverMsg: true }]);
 		setDrawer(data.drawer);
 		setRoundStarted(true);
-	})
+	});
 	
 	socket.on('round_timer', (timer: number) => {
 		setCurrentRoundTime(timer);
@@ -92,46 +99,73 @@ const App: Component = () => {
   });
 
   socket.on('round_end', (curRound) => {
-      setRoundStarted(false);
-      setCurrentRound(curRound);
+    setRoundStarted(false);
+    setCurrentRound(curRound);
+  });
+  socket.on('initial_rooms', (rounds) => {
+    setInitialRooms(rounds);
   });
 
   return (
     <div class={styles.App}>
-			<Show when={!room()}>
-				<RoomBrowser getRoom={setRoom} socket={socket} name={name()} />
+			<Show when={(room() === "lobby" && name())}>
+				<RoomBrowser getRoom={setRoom} socket={socket} name={name()} initialRooms={initialRooms()}/>
 			</Show>
-			<Show when={room()}> 
+			<Show when={room() !== "lobby"}> 
 				<div class={styles.gameContainer}>
-          <div class={styles.playersInRoom}>
-            {playersInRoom().map(player => (
-              <div>
-                {Object.values(player)}
-              </div>
-             ))}
+          <div class={styles.topBar}>
+            <div>
+              {`${room()} - Round ${currentRound()}`}
+            </div>
+            <div>
+              Hint
+            </div>
           </div>
-					<div class={styles.chat}>
-            {room()}{currentRoundTime()}{currentIntermissionTimer()}
-						<div class={styles.chatBox}>
-							<For each={chat()}>
-								{(msg: MessageType) => {
-                  if (msg.serverMsg) {
-                    return <div><b>{msg.msg}</b></div>;
-                  } else {
-                    return (
-                      <div class={styles.chatMsg}>
-                        <span>{msg.name}:</span>{msg.msg}
+          <div class={styles.gameBody}>
+            <div class={styles.leftColumn}>
+              <div class={styles.playersWrapper}>
+                <div class={styles.playersInRoom}>
+                  <For each={playersInRoom()}>
+                    {(player: UserAndSocket) => (
+                      <div class={styles.playerNameWrapper}>
+                        {Object.values(player)[0]}
                       </div>
-                    )
-                  } 
-                }}
-							</For>
-						</div>
-						<input class={styles.textInput} onInput={(e) => setMessage(e.currentTarget.value)} value={message()} />
-						<button onClick={handleSendMessage}>send</button>
-					</div>
-					<Canvas socket={socket} isDrawer={socket.id === Object.keys(drawer())[0]} />
-					<button onClick={() => handleStart()}>start</button>
+                    )}
+                  </For>  
+                </div>
+              </div>
+              <div class={styles.gameControlWrapper}>
+                <div>Ready</div>
+                <img src={Icons.LeaveRoom} alt="Leave room" onClick={() => handleLeaveRoom()} /> 
+              </div>
+            </div>
+            <div class={styles.chatWrapper}>
+              <div class={styles.chat}>
+                <For each={chat()}>
+                  {(msg: MessageType) => {
+                    if (msg.serverMsg) {
+                      return <div><b>{msg.msg}</b></div>;
+                    } else {
+                      return (
+                        <div class={styles.chatMsg}>
+                          <span>{msg.name}:</span>{msg.msg}
+                        </div>
+                      )
+                    } 
+                  }}
+                </For>
+              </div>  
+              <div class={styles.sendMsgWrapper}>
+                <input
+                  class={styles.textInput}
+                  onInput={(e) => setMessage(e.currentTarget.value)}
+                  value={message()} 
+                />
+                <button class={styles.sendBtn} onClick={handleSendMessage}>Send</button>
+              </div>
+            </div>
+            <Canvas socket={socket} isDrawer={socket.id === Object.keys(drawer())[0]} />
+          </div>
 				</div>
 			</Show>	
 			<Show when={!name()}>

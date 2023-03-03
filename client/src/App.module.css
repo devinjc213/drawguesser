@@ -3,12 +3,27 @@
 	justify-content: center;
 	align-items: center;
 	height: 100vh;
-	background-image: linear-gradient(to bottom, #200869, #3b5182); 
+  background-image: linear-gradient(206.02deg, #200869,
+    rgba(34, 14, 107, 0.921875), rgba(29, 15, 84, 0.942214) 46.79%, #101113 89.1%);
+}
+
+.playersWrapper {
+  background: #4D8076;
+  padding: 0.5rem;
+  border-radius: 8px;
 }
 
 .playersInRoom {
   display: flex;
   flex-direction: column;
+  width: 90px;
+  height: 330px;
+  background: #FAEAFF;
+  border-radius: 8px;
+}
+
+.playerNameWrapper {
+  padding: 0.25rem;
 }
 
 .chatMsg {
@@ -22,28 +37,87 @@
 
 .chat {
 	padding: 1rem;
-	background: #778396;
-	border-radius: 4px;
-	margin-right: 1rem;
+	background: #FAEAFF;
+	border-radius: 8px;
+  width: 220px;
+  height: 540px;
+}
+
+.sendMsgWrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.5rem;
 }
 
 .textInput {
-	width: 250px;
+	width: 180px;
+  height: 1.5rem;
 	border: 2px solid black;
 	outline: none;
 	border: none;
+  border-radius: 8px;
+  background: #FAEAFF;
 }
 
-.chatBox {
-	width: 300px;
-	height: 600px;
-	background: white;
-	overflow-y: auto;
+.sendBtn {
+  cursor: pointer;
+  background: #65BAA9;
+  color: 200869;
+  border-radius: 8px;
+  padding: 0.25rem 0.5rem;
+}
+
+.chatWrapper {
+  background: #4d8076;
+  padding: 0.5rem;
+  border-radius: 8px;
 }
 
 .gameContainer {
 	display: flex;
-	max-width: 1536px;
-	padding: 2rem;
-	background: #43464B;
+  flex-direction: column;
+	max-width: 1280px;
+  max-height: 700px;
+	background: #564472;
+  padding: 0.25rem 1rem;
+  border-radius: 8px;
+}
+
+
+.topBar {
+  display: flex;
+  justify-content: space-between;
+  color: white;
+  font-size: 1.5rem;
+  width: 100%;
+  margin-bottom: 0.5rem;
+}
+
+.gameBody {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  height: 100%;
+}
+
+.leftColumn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 623px;
+  justify-content: space-between;
+}
+
+.gameControlWrapper {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  background: #4D8076;
+  border-radius: 8px;
+  height: 100%;
+  width: 100%;
+  margin-top: 0.5rem;
+  padding: 0.5rem 0;
 }
