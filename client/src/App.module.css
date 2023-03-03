@@ -103,12 +103,21 @@
 
 .leftColumn {
   display: flex;
-  flex: 1;
   flex-direction: column;
   align-items: center;
+  height: 623px;
   justify-content: space-between;
 }
 
-.leftColumn > img {
-  margin-top: 13rem;
+.gameControlWrapper {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  background: #4D8076;
+  border-radius: 8px;
+  height: 100%;
+  width: 100%;
+  margin-top: 0.5rem;
+  padding: 0.5rem 0;
 }

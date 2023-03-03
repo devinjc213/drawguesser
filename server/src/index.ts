@@ -21,10 +21,8 @@ let GameRoomState: GameRoomType = {};
 io.on("connection", (socket) => {
 	socket.join("lobby");
 	//user joins their own room when connecting for some reason so we have to filter from room list
-	const clients = Array.from(io.sockets.sockets.keys());
-	const rooms = Array.from(io.sockets.adapter.rooms.keys()).filter(room => !clients.includes(room));
 
-	io.emit('room_update', rooms);
+	io.to(socket.id).emit('initial_rooms', Object.keys(GameRoomState));
 
 	socket.on("message", (data) => {
 		GameRoomState[data.room].handleMessage(data);
@@ -53,15 +51,10 @@ io.on("connection", (socket) => {
 		socket.leave("lobby");
 		io.to(socket.id).emit("create_join_room", data.room);
 
-
 		const game = new GameController(data.room, [{ [socket.id]: data.name }], socket);
 		GameRoomState[data.room] = game;
-
-
-		const rooms = Array.from(io.sockets.adapter.rooms.keys())
-      .filter(room => !clients.includes(room));
-		
-    io.emit('room_update', rooms);
+	
+    io.emit('room_update', Object.keys(GameRoomState));
 	});
 
 	socket.on("join_room", (data) => {
@@ -75,15 +68,21 @@ io.on("connection", (socket) => {
 		GameRoomState[data.room].roundStart();			
 	});
 
+  socket.on('leave_room', data => {
+    GameRoomState[data.room].playerLeft(socket.id);
+    io.to(socket.id).emit('room_update', Object.keys(GameRoomState));
+  })
+
   socket.on('disconnecting', () => {
     const room = Array.from(socket.rooms)[1];
-    GameRoomState[room].playerLeft(socket.id); 
+    if (room !== "lobby") GameRoomState[room].playerLeft(socket.id); 
   });
 
   socket.on('disconnect', () => {
     for (const game in GameRoomState) {
       if (GameRoomState[game].players.length === 0) {
         delete GameRoomState[game]
+        io.emit('room_update', Object.keys(GameRoomState));
       }
     }
   });

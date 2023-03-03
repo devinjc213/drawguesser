@@ -5,7 +5,7 @@ export default class GameController {
 	private room: string;
 	public players: UserAndSocket[];
 	private socket: Socket;
-	private numberOfPlayers: number;
+	private maxNumberOfPlayers: number;
 	private drawer: UserAndSocket;
 	private roundIsStarted: boolean;
 	private currentRound: number;
@@ -22,7 +22,7 @@ export default class GameController {
 		this.room = room;
 		this.players = players;
 		this.socket = socket;
-		this.numberOfPlayers = 8;
+		this.maxNumberOfPlayers = 8;
 		this.drawer = players[0];
 		this.roundIsStarted = false;
 		this.currentRound = 1;

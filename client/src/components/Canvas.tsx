@@ -96,7 +96,7 @@ const Canvas: Component<{ socket: Socket, isDrawer: boolean }> = (props) => {
     if (data.id !== props.socket.id) emitDraw(data.x, data.y, data.color, data.brushSize);
   });
 
-	props.socket.on('clear_pos', clearPos => {
+	props.socket.on('clear_pos', () => {
     lastX = 0;
     lastY = 0;
   });

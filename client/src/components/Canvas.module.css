@@ -84,3 +84,8 @@
   margin-bottom: -3rem; 
 }
 
+.gameControlWrapper {
+  background: #4D8076;
+  width: 200px;
+  height: 300px; 
+}
