@@ -7,6 +7,7 @@
 .controls {
   display: flex;
   justify-content: space-around;
+  align-items: center;
   background: #4D8076;
   border-radius: 8px;
   padding: 1.25rem 0.5rem;
@@ -14,16 +15,16 @@
 }
 
 .colorSquare {
-    width: 24px;
-    height: 24px;
-    cursor: pointer;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
 }
 
 .colorContainer {
   display: flex;
   flex-direction: column;
-  padding: 0.25rem;
-  background: #7b7484;
+  padding: 0.5rem;
+  background: #564472;
   border-radius: 8px;
 }
 
@@ -43,7 +44,7 @@
   align-items: center;
   justify-content: center;
   gap: 1rem;
-  background: #4a4453;
+  background: #564472;
   border-radius: 8px;
   padding: 0 1rem;
 }
@@ -53,20 +54,20 @@
 }
 
 .activeToolLeft {
-  background: #B0A8B9;
+  background: #FAEAFF;
   position: relative;
   border-radius: 8px;
-  padding: 1rem;
-  margin-left: -1rem;
+  padding: 1.25rem;
+  margin-left: -1.25rem;
 }
 
 
 .activeToolRight {
-  background: #B0A8B9;
+  background: #FAEAFF;
   position: relative;
   border-radius: 8px;
-  padding: 1rem;
-  margin-right: -1rem;
+  padding: 1.25rem;
+  margin-right: -1.25rem;
 }
 
 
@@ -76,9 +77,10 @@
   flex-direction: column;
   align-items: center;
   justify-content: flex-end;
+  margin-top: -1rem;
 }
 
 .brushSizeContainer > input {
-  margin-bottom: -1rem; 
+  margin-bottom: -3rem; 
 }
 
