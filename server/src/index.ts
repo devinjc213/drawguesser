@@ -29,13 +29,23 @@ io.on("connection", (socket) => {
 	});
 
 	socket.on("canvas_emit", (data) => {
-		io.emit("canvas_emit", { 
-			x: data.x, 
-			y: data.y, 
-			color: data.color, 
-			brushSize: data.brushSize, 
-			id: data.id 
-		});
+    if (data.type === "draw") {
+      io.emit("canvas_emit", { 
+        type: data.type,
+        x: data.x, 
+        y: data.y, 
+        color: data.color, 
+        brushSize: data.brushSize, 
+        id: data.id 
+      });
+    } else if (data.type === "bucket") {
+      io.emit("canvas_emit", {
+        type: data.type,
+        stack: data.stack,
+        clickedColor: data.clickedColor,
+        bucketColor: data.bucketColor
+      });
+    }
 	});
 
 	socket.on("clear_pos", (clearPos) => {
