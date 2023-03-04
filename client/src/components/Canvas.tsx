@@ -2,7 +2,6 @@ import type { Component } from "solid-js";
 import {createSignal, onCleanup, onMount} from "solid-js";
 import type { Socket } from "socket.io-client";
 import { Icons } from '../assets/Icons';
-import ControlImage from '../components/ControlImage';
 import styles from './Canvas.module.css';
 
 type Pos = {
@@ -33,7 +32,6 @@ const Canvas: Component<{ socket: Socket, isDrawer: boolean }> = (props) => {
     ctx = canvas.getContext("2d", { willReadFrequently: true });
     ctx.fillStyle = "white";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.imageSmoothingEnabled = false;
 
     document.addEventListener('mousemove', draw);
     document.addEventListener('mousedown', handlePos);
@@ -61,11 +59,11 @@ const Canvas: Component<{ socket: Socket, isDrawer: boolean }> = (props) => {
 
 	const handlePos = (e: any) => {
 		rect = canvas.getBoundingClientRect();
-    
-    let x = Math.floor((e.clientX - rect.left) / (rect.right - rect.left) * canvas.width);
-    let y = Math.floor((e.clientY - rect.top) / (rect.bottom - rect.top) * canvas.height);
 
-		setPos({ x, y });
+    setPos({
+      x: Math.floor((e.clientX - rect.left) / (rect.right - rect.left) * canvas.width),
+      y: Math.floor((e.clientY - rect.top) / (rect.bottom - rect.top) * canvas.height)
+    }); 
 	};
 
   const outOfBounds = (x: number, y: number) => { 
@@ -180,7 +178,6 @@ const Canvas: Component<{ socket: Socket, isDrawer: boolean }> = (props) => {
     handlePos(e);
     const clickedColor = getColorAtPos(imageData, pos().x, pos().y);
     const bucketColor = hexToRgb(drawColor());
-    let pixel: Pos;
     const stack: Pos[] = [];
 
     if (colorMatch(clickedColor, bucketColor) || outOfBounds(pos().x, pos().y)) return;
@@ -221,7 +218,6 @@ const Canvas: Component<{ socket: Socket, isDrawer: boolean }> = (props) => {
 	}
 
 	props.socket.on('canvas_emit', data => {
-    console.log(data);
     if (data.id !== props.socket.id) {
       if (data.type === "draw")
         //need to refactor to have 1 draw function per tool
