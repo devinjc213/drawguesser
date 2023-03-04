@@ -14,11 +14,12 @@ type RGB = {
   r: number
   g: number
   b: number
+  a: number
 }
 
 const Canvas: Component<{ socket: Socket, isDrawer: boolean }> = (props) => {
   const [paintTool, setPaintTool] = createSignal<"brush" | "bucket">("brush");
-	const [drawColor, setDrawColor] = createSignal<string>("#00000");
+	const [drawColor, setDrawColor] = createSignal<string>("#000000");
 	const [brushSize, setBrushSize] = createSignal<number>(5);
 	const [pos, setPos] = createSignal<{ x: number, y: number}>({x:0,y:0});
 	let rect: any;
@@ -29,7 +30,7 @@ const Canvas: Component<{ socket: Socket, isDrawer: boolean }> = (props) => {
   let imageData: any;
 
 	onMount(() => {
-    ctx = canvas.getContext("2d");
+    ctx = canvas.getContext("2d", { willReadFrequently: true });
     ctx.fillStyle = "white";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.imageSmoothingEnabled = false;
@@ -85,19 +86,27 @@ const Canvas: Component<{ socket: Socket, isDrawer: boolean }> = (props) => {
 
 		ctx.stroke();
 
-		props.socket.emit('canvas_emit', { x: pos().x, y: pos().y, color: drawColor(), brushSize: brushSize(), id: props.socket.id });
+		props.socket.emit('canvas_emit', {
+      type: "draw",
+      x: pos().x,
+      y: pos().y,
+      color: drawColor(),
+      brushSize: brushSize(),
+      id: props.socket.id
+    });
 	};
 
   const hexToRgb = (hex: string) => {
     return {
       r: parseInt(hex.slice(1, 3), 16),
       g: parseInt(hex.slice(3, 5), 16),
-      b: parseInt(hex.slice(5, 7), 16)
+      b: parseInt(hex.slice(5, 7), 16),
+      a: 255
     };
   }
 
   const colorMatch = (a: RGB, b: RGB) =>
-    a.r === b.r && a.g === b.g && a.b === b.b;
+    a.r === b.r && a.g === b.g && a.b === b.b && a.a === b.a;
 
   const getColorAtPos = (imageData: any, x: number, y: number) => {
     const {width, data} = imageData;
@@ -106,6 +115,7 @@ const Canvas: Component<{ socket: Socket, isDrawer: boolean }> = (props) => {
       r: data[4 * (width * y + x)],
       g: data[4 * (width * y + x) + 1],
       b: data[4 * (width * y + x) + 2],
+      a: data[4 * (width * y + x) + 3]
     }
   }
 
@@ -115,21 +125,12 @@ const Canvas: Component<{ socket: Socket, isDrawer: boolean }> = (props) => {
     data[4 * (width * y + x)] = color.r;
     data[4 * (width * y + x) + 1] = color.g;
     data[4 * (width * y + x) + 2] = color.b;
+    data[4 * (width * y + x) + 3] = color.a;
   }
 
-  const bucket = (e: any) => {
-    if (paintTool() !== "bucket") return;
-    imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    handlePos(e);
-    const clickedColor = getColorAtPos(imageData, pos().x, pos().y);
-    const bucketColor = hexToRgb(drawColor());
+  const floodFill = (stack: Pos[], clickedColor: RGB, bucketColor: RGB) => {
     let pixel: Pos;
-    const stack: Pos[] = [];
-
-    if (colorMatch(clickedColor, bucketColor) || outOfBounds(pos().x, pos().y)) return;
-
-    stack.push({ x: pos().x, y: pos().y });
-
+    //TODO: Figure out antialiasing issue
     while (stack.length) {
       pixel = stack.pop()!;
       let continueDown = true;
@@ -144,19 +145,19 @@ const Canvas: Component<{ socket: Socket, isDrawer: boolean }> = (props) => {
 
       while (continueDown && pixel.y < canvas.height) {
         setColorAtPos(imageData, bucketColor, pixel.x, pixel.y);
-      
-        if (pixel.x - 1 >= 0
-          && colorMatch(getColorAtPos(imageData, pixel.x - 1, pixel.y), clickedColor)) {
-            if (!continueLeft) {
-              continueLeft = true;
-              stack.push({ x: pixel.x - 1, y: pixel.y });
-            }
+
+        if (pixel.x - 1 >= 0 && 
+            colorMatch(getColorAtPos(imageData, pixel.x - 1, pixel.y), clickedColor)) {
+          if (!continueLeft) {
+            continueLeft = true;
+            stack.push({ x: pixel.x - 1, y: pixel.y });
+          }
         } else {
           continueLeft = false;
         }
 
-        if (pixel.x + 1 < canvas.width
-            && colorMatch(getColorAtPos(imageData, pixel.x + 1, pixel.y), clickedColor)) {
+        if (pixel.x + 1 < canvas.width &&
+            colorMatch(getColorAtPos(imageData, pixel.x + 1, pixel.y), clickedColor)) {
           if (!continueRight) {
             stack.push({ x: pixel.x + 1, y: pixel.y });
             continueRight = true;
@@ -166,11 +167,33 @@ const Canvas: Component<{ socket: Socket, isDrawer: boolean }> = (props) => {
         }
 
         pixel.y++
-        continueDown = colorMatch(getColorAtPos(imageData, pixel.x, pixel.y), clickedColor);
+          continueDown = colorMatch(getColorAtPos(imageData, pixel.x, pixel.y), clickedColor);
       }
-    }
-
+    }  
+    
     ctx.putImageData(imageData, 0, 0);
+  }
+
+  const bucket = (e: any) => {
+    if (paintTool() !== "bucket") return;
+    imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    handlePos(e);
+    const clickedColor = getColorAtPos(imageData, pos().x, pos().y);
+    const bucketColor = hexToRgb(drawColor());
+    let pixel: Pos;
+    const stack: Pos[] = [];
+
+    if (colorMatch(clickedColor, bucketColor) || outOfBounds(pos().x, pos().y)) return;
+
+    stack.push({ x: pos().x, y: pos().y });
+    props.socket.emit('canvas_emit', {
+        type: "bucket",
+        stack,
+        clickedColor,
+        bucketColor
+    });
+
+    floodFill(stack, clickedColor, bucketColor);
   }
   
 
@@ -198,7 +221,16 @@ const Canvas: Component<{ socket: Socket, isDrawer: boolean }> = (props) => {
 	}
 
 	props.socket.on('canvas_emit', data => {
-    if (data.id !== props.socket.id) emitDraw(data.x, data.y, data.color, data.brushSize);
+    console.log(data);
+    if (data.id !== props.socket.id) {
+      if (data.type === "draw")
+        //need to refactor to have 1 draw function per tool
+        emitDraw(data.x, data.y, data.color, data.brushSize);
+      else if (data.type === "bucket") {
+        imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        floodFill(data.stack, data.clickedColor, data.bucketColor);
+      }
+    }
   });
 
 	props.socket.on('clear_pos', () => {
