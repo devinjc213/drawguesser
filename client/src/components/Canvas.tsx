@@ -3,6 +3,7 @@ import {createSignal, onCleanup, onMount} from "solid-js";
 import type { Socket } from "socket.io-client";
 import { Icons } from '../assets/Icons';
 import styles from './Canvas.module.css';
+import ticking from '../assets/sounds/ticking.wav';
 
 type Pos = {
   x: number
@@ -27,11 +28,14 @@ const Canvas: Component<{ socket: Socket, isDrawer: boolean }> = (props) => {
 	let lastX: number;
 	let lastY: number;
   let imageData: any;
+  let tick: any;
 
 	onMount(() => {
     ctx = canvas.getContext("2d", { willReadFrequently: true });
     ctx.fillStyle = "white";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+    tick = new Audio(ticking);
+    tick.loop = true;
 
     document.addEventListener('mousemove', draw);
     document.addEventListener('mousedown', handlePos);
@@ -73,6 +77,7 @@ const Canvas: Component<{ socket: Socket, isDrawer: boolean }> = (props) => {
 	const draw = (e: any) => {
 		if (e.buttons !== 1 || paintTool() === "bucket" || outOfBounds(pos().x, pos().y)) return;
 		ctx.beginPath();
+    tick.play();
 
 		ctx.lineWidth = brushSize();
 		ctx.lineCap = 'round';
