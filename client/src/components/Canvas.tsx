@@ -241,7 +241,7 @@ const Canvas: Component<{ socket: Socket, isDrawer: boolean }> = (props) => {
 	return (
 		<div class={styles.canvasContainer}>
       <div class={styles.canvasWrapper}>
-        <canvas ref={canvas} width="650" height="500"></canvas>
+        <canvas ref={canvas} width="720" height="500"></canvas>
       </div>
 			<div class={styles.controls}>
         <div class={styles.brushSizeContainer}>

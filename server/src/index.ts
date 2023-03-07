@@ -1,9 +1,21 @@
 import { createServer } from "http";
 import { Server } from "socket.io";
-import GameController from './gameController';
+import GameController from './GameController';
 
-export type UserAndSocket = { [key: string]: string };
-export type MessageType = { socketId: string, name: string, msg: string, room: string };
+export type User = {
+  [key: string]: {
+    name: string 
+    score?: number
+    ready?: boolean
+  }
+}
+
+export type MessageType = {
+  socketId: string
+  name: string
+  msg: string
+  room: string
+}
 
 type GameRoomType = {
 	[key: string]: GameController
@@ -20,13 +32,12 @@ let GameRoomState: GameRoomType = {};
 
 io.on("connection", (socket) => {
 	socket.join("lobby");
-	//user joins their own room when connecting for some reason so we have to filter from room list
 
 	io.to(socket.id).emit('initial_rooms', Object.keys(GameRoomState));
 
-	socket.on("message", (data) => {
-		GameRoomState[data.room].handleMessage(data);
-	});
+  socket.on("message", (data) => {
+    GameRoomState[data.room].handleMessage(data);
+  });
 
 	socket.on("canvas_emit", (data) => {
     if (data.type === "draw") {
@@ -61,18 +72,23 @@ io.on("connection", (socket) => {
 		socket.leave("lobby");
 		io.to(socket.id).emit("create_join_room", data.room);
 
-		const game = new GameController(data.room, [{ [socket.id]: data.name }], socket);
+		const game = new GameController(data.room, [{ [socket.id]: { name: data.name } }], socket);
 		GameRoomState[data.room] = game;
 	
     io.emit('room_update', Object.keys(GameRoomState));
+    io.to(socket.id).emit('players_in_room', GameRoomState[data.room].players);
 	});
 
 	socket.on("join_room", (data) => {
 		socket.join(data.room);
 		socket.leave("lobby");
 		io.to(data.room).emit('user_joined', data.name);
-		GameRoomState[data.room].playerJoined({ [socket.id]: data.name })
+		GameRoomState[data.room].playerJoined({ [socket.id]: { name: data.name } })
 	});
+
+  socket.on('player_ready', data => {
+    GameRoomState[data.room].playerReady(socket.id);
+  });
 
 	socket.on('start_game', data => {
 		GameRoomState[data.room].roundStart();			

@@ -1,7 +1,11 @@
 .canvasContainer {
   display: flex;
   flex-direction: column;
+  align-items: center;
+  justify-content: center;
   gap: 0.5rem;
+  height: 100%;
+  width: 60%;
 }
 
 .controls {
@@ -11,7 +15,7 @@
   background: #4D8076;
   border-radius: 8px;
   padding: 1.25rem 0.5rem;
-  margin-bottom: 0.4rem;
+  width: 98%;
 }
 
 .colorSquare {
