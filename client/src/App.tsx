@@ -10,7 +10,14 @@ import styles from './App.module.css';
 
 const socket = io("http://localhost:4000"); 
 
-type UserAndSocket = { [key: string]: string }
+type User = {
+  [key: string]: {
+    name: string
+    score?: number
+    ready?: boolean
+  }
+}
+
 type MessageType = {
 	name: string
 	msg: string
@@ -21,15 +28,18 @@ const App: Component = () => {
 	const [room, setRoom] = createSignal<string>("lobby");
 	const [name, setName] = createSignal<string>("");
 	const [chat, setChat] = createSignal<MessageType[]>([]);
-	const [drawer, setDrawer] = createSignal<string>("");
+	const [drawer, setDrawer] = createSignal<User>({});
   const [currentRound, setCurrentRound] = createSignal<number>(1);
 	const [roundStarted, setRoundStarted] = createSignal<boolean>(false);
 	const [currentRoundTime, setCurrentRoundTime] = createSignal<number>(45);
-  const [playersInRoom, setPlayersInRoom] = createSignal<UserAndSocket[]>();
+  const [playersInRoom, setPlayersInRoom] = createSignal<User[]>([]);
   const [currentIntermissionTimer, setCurrentIntermissionTimer] =
     createSignal<number>();
 	const [message, setMessage] = createSignal<string>("");
   const [initialRooms, setInitialRooms] = createSignal<string[]>();
+  const [mute, setMute] = createSignal<boolean>(false);
+  const [ready, setReady] = createSignal<boolean>(false);
+  const [canStart, setCanStart] = createSignal<boolean>(false);
 		
 	onMount(() => {
 		document.addEventListener("keypress", (e) => {
@@ -52,11 +62,16 @@ const App: Component = () => {
 	});
 
 	const handleSendMessage = () => {
-		if (!message() || (drawer() === name() && roundStarted())) return;
+		if (!message() || (Object.values(drawer())[0].name === name() && roundStarted())) return;
 
-		socket.emit('message', { name: name(), msg: message(), room: room() });
+		socket.emit('message', { socketId: socket.id, name: name(), msg: message(), room: room() });
 		setMessage("");
 	}
+
+  const handleReady = () => {
+    setReady(ready => !ready);
+    socket.emit('player_ready', { room: room() });
+  }
 
 	const handleStart = () => {
 		socket.emit('start_game', { room: room() });
@@ -77,9 +92,8 @@ const App: Component = () => {
 
 	socket.on('create_join_room', room => {
 		setRoom(room);
-    setPlayersInRoom([{ [socket.id]: name() }]) 
 	});
-
+ 
 	socket.on('round_start', data => {
 		setChat(chat => [...chat, { name: 'SERVER', msg: data.msg, serverMsg: true }]);
 		setDrawer(data.drawer);
@@ -106,6 +120,16 @@ const App: Component = () => {
     setInitialRooms(rounds);
   });
 
+  socket.on('room_init', user => {
+      console.log(user);
+      setPlayersInRoom(user);
+      setDrawer(user);
+      console.log(playersInRoom());
+      console.log(drawer());
+  });
+
+  socket.on('can_start', canStart => setCanStart(canStart));
+
   return (
     <div class={styles.App}>
 			<Show when={(room() === "lobby" && name())}>
@@ -117,6 +141,7 @@ const App: Component = () => {
             <div>
               {`${room()} - Round ${currentRound()}`}
             </div>
+            <div>{roundStarted() ? currentRoundTime() : currentIntermissionTimer()}</div>
             <div>
               Hint
             </div>
@@ -126,16 +151,66 @@ const App: Component = () => {
               <div class={styles.playersWrapper}>
                 <div class={styles.playersInRoom}>
                   <For each={playersInRoom()}>
-                    {(player: UserAndSocket) => (
+                    {(player: User) => (
                       <div class={styles.playerNameWrapper}>
-                        {Object.values(player)[0]}
+                        <span class={Object.values(player)[0].ready ? styles.greenText: ''}>
+                          {Object.values(player)[0].name}
+                        </span>
+                        <span>
+                          <Show
+                            when={Object.values(player)[0].ready}
+                            fallback={Object.values(player)[0].score ?? 0}
+                          >
+                            <img src={Icons.GreenCheck} width="10" height="10" alt="checkmark" />
+                          </Show>
+                        </span>
                       </div>
                     )}
                   </For>  
                 </div>
               </div>
               <div class={styles.gameControlWrapper}>
-                <div>Ready</div>
+                <div
+                  class={ready() ?
+                    `${styles.divBtn} ${styles.unreadyBtn}`
+                    : `${styles.divBtn} ${styles.readyBtn}`}
+                  onClick={() => handleReady()}
+                >
+                  {ready() ? 'Unready' : 'Ready'}
+                </div>
+                <Show
+                  when={name() && !roundStarted() && Object.keys(drawer())[0] === socket.id}
+                >
+                  <div
+                    class={canStart()
+                      ? `${styles.divBtn} ${styles.readyBtn}`
+                      : `${styles.divBtn} ${styles.disabledBtn}`}
+                    onClick={() => {
+                      if (canStart()) handleStart();
+                    }}
+                  >
+                    Start
+                  </div>
+                </Show>
+                <div class={styles.soundWrapper}>
+                  <img
+                    src={Icons.Sound}
+                    alt="mute"
+                    height="36"
+                    width="36"
+                    onClick={() => setMute(true)}
+                  />
+                  <Show when={mute()}>
+                    <img
+                      src={Icons.NoSign}
+                      class={styles.noSign}
+                      height="48"
+                      width="48"
+                      alt="unmute"
+                      onClick={() => setMute(false)}
+                    />
+                  </Show>
+                </div>
                 <img src={Icons.LeaveRoom} alt="Leave room" onClick={() => handleLeaveRoom()} /> 
               </div>
             </div>

@@ -1,12 +1,13 @@
-import { io, UserAndSocket, MessageType } from './index';
+import { io, User, MessageType } from './index';
 import type { Socket } from 'socket.io'
+const fs = require('fs');
 
 export default class GameController {
 	private room: string;
-	public players: UserAndSocket[];
+	public players: User[];
 	private socket: Socket;
 	private maxNumberOfPlayers: number;
-	private drawer: UserAndSocket;
+	private drawer: User;
 	private roundIsStarted: boolean;
 	private currentRound: number;
 	private roundTimer: number;
@@ -15,10 +16,11 @@ export default class GameController {
 	private currentIntermissionTimer: number;
 	private numberOfRounds: number;
 	private words: string[];
-  private playersGuessedCorrect: UserAndSocket[];
+  private selectedWord: string;
+  private playersGuessedCorrect: User[];
 	private interval: any;
 
-	constructor(room: string, players: UserAndSocket[], socket: Socket) {
+	constructor(room: string, players: User[], socket: Socket) {
 		this.room = room;
 		this.players = players;
 		this.socket = socket;
@@ -31,12 +33,12 @@ export default class GameController {
 		this.intermissionTimer = 10;
 		this.currentIntermissionTimer = this.intermissionTimer;
 		this.numberOfRounds = 3;
-		this.words = ["apple"];
+		this.words = JSON.parse(fs.readFileSync(__dirname + '/1000_words.json', 'utf8')); 
+    this.selectedWord = "";
     this.playersGuessedCorrect = [];
 		this.interval = null;
 
-
-    io.to(this.room).emit('players_in_room', this.drawer);
+    io.to(this.room).emit('room_init', this.drawer);
 	}
 
 	countdown(cdType: "round" | "intermission") {	
@@ -62,22 +64,25 @@ export default class GameController {
 	}
 
 	handleMessage({ socketId, name, msg, room }: MessageType) {
+    if (this.roundIsStarted && socketId === Object.keys(this.drawer)[0]) return;
+
 		if (!this.roundIsStarted) {
 			io.to(room).emit("message", { name, msg });
 		} else {
 			if (msg === this.words[0]) {
 				io.to(this.room).emit('server_message', `${name} guessed the word!`);
-        this.playersGuessedCorrect.push({ [socketId]: name });
+        this.playersGuessedCorrect.push({ [socketId]: { name } });
         if (this.playersGuessedCorrect.length === this.players.length) {
           io.to(this.room).emit('server_message', 'All users have guessed the word!');
+          this.roundEnd();
         }
-			} else {
+			} else if (!Object.keys(this.playersGuessedCorrect).includes(socketId)) {
 				io.to(room).emit("message", { name, msg });
 			}	
 		}
 	} 
 
-	shuffle(array: UserAndSocket[] | []) {
+	shuffle(array: User[] | []) {
 		let currentIndex = array.length;
 		let randomIndex: number;
 		while (currentIndex != 0) {
@@ -91,7 +96,7 @@ export default class GameController {
 		return array;
 	}
 
-	playerJoined(player: UserAndSocket) {
+	playerJoined(player: User) {
 		this.players = [...this.players, player];
     io.to(this.room).emit('players_in_room', this.players);
 	}
@@ -109,7 +114,29 @@ export default class GameController {
     io.to(this.room).emit('players_in_room', this.players);
   }
 
+  playerReady(id: string) {
+    const playerIndex = this.players.findIndex(player => Object.keys(player)[0] === id);
+    this.players[playerIndex][id].ready = !this.players[playerIndex][id].ready;
+    io.to(this.room).emit('players_in_room', this.players);
+    if (this.players.findIndex(player => !Object.values(player)[0].ready) === -1) {
+      io.to(Object.keys(this.drawer)[0]).emit('can_start', true);
+    } else {
+      io.to(Object.keys(this.drawer)[0]).emit('can_start', false);
+    }
+  }
+
+  pickDrawWord() {
+    const drawWords: string[] = [];
+    while (drawWords.length < 4) {
+      drawWords.push(this.words[Math.floor(Math.random() * this.words.length)])
+    }
+    console.log(drawWords);
+  }
+
 	roundStart() {
+    this.pickDrawWord();
+    this.players.forEach(player => player[Object.keys(player)[0]].ready = false);
+    io.to(this.room).emit('players_in_room', this.players);
 		this.roundIsStarted = true;
     this.currentIntermissionTimer = this.intermissionTimer;
 		this.interval = setInterval(this.countdown.bind(this, "round"), 1000);
@@ -117,10 +144,9 @@ export default class GameController {
 		this.countdown("round");
 		io.to(this.room).emit('round_start', {
 			drawer: this.drawer,
-			msg: `Round has started. ${Object.values(this.drawer)[0]} is drawing`
+			msg: `Round has started. ${Object.values(this.drawer)[0].name} is drawing`
 		});
 	}
-
 
 	intermission() {
     if (this.playersGuessedCorrect.length > 0) {
