@@ -5,8 +5,6 @@ const NameModal: Component<{getName: Setter<string>}> = (props) => {
   const [name, setName] = createSignal<string>("");
   let inputRef: any;
   
-  createEffect(() => { console.log(name()) });
-  
   const submitName = (e: any) => {
     if (e.key === "Enter") props.getName(name()); 
   }

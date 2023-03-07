@@ -130,7 +130,6 @@ export default class GameController {
     while (drawWords.length < 4) {
       drawWords.push(this.words[Math.floor(Math.random() * this.words.length)])
     }
-    console.log(drawWords);
   }
 
 	roundStart() {
