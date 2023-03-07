@@ -121,11 +121,8 @@ const App: Component = () => {
   });
 
   socket.on('room_init', user => {
-      console.log(user);
       setPlayersInRoom(user);
       setDrawer(user);
-      console.log(playersInRoom());
-      console.log(drawer());
   });
 
   socket.on('can_start', canStart => setCanStart(canStart));
