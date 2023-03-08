@@ -1,8 +1,9 @@
 import type { Component } from "solid-js";
-import {createSignal, onCleanup, onMount} from "solid-js";
+import {createSignal, onCleanup, onMount, Show} from "solid-js";
 import type { Socket } from "socket.io-client";
 import { Icons } from '../assets/Icons';
 import styles from './Canvas.module.css';
+import ChooseWordOverlay from "./ChooseWordOverlay";
 
 type Pos = {
   x: number
@@ -16,10 +17,16 @@ type RGB = {
   a: number
 }
 
-const Canvas: Component<{ socket: Socket, isDrawer: boolean }> = (props) => {
+const Canvas: Component<{
+  socket: Socket,
+  room: string,
+  isDrawer: boolean,
+  selectedWord: string
+}> = (props) => {
   const [paintTool, setPaintTool] = createSignal<"brush" | "bucket">("brush");
 	const [drawColor, setDrawColor] = createSignal<string>("#000000");
 	const [brushSize, setBrushSize] = createSignal<number>(5);
+  const [drawWords, setDrawWords] = createSignal<string[]>([]);
 	const [pos, setPos] = createSignal<{ x: number, y: number}>({x:0,y:0});
 	let rect: any;
 	let canvas: any;
@@ -238,10 +245,18 @@ const Canvas: Component<{ socket: Socket, isDrawer: boolean }> = (props) => {
     if (data.id !== props.socket.id) handleClear();
   });
 
+  props.socket.on('draw_words', words => {
+    setDrawWords(words);
+    console.log(words);
+  });
+
 	return (
 		<div class={styles.canvasContainer}>
       <div class={styles.canvasWrapper}>
         <canvas ref={canvas} width="720" height="500"></canvas>
+        <Show when={!props.selectedWord && drawWords().length > 0}>
+          <ChooseWordOverlay socket={props.socket} room={props.room} words={drawWords()} />
+        </Show>
       </div>
 			<div class={styles.controls}>
         <div class={styles.brushSizeContainer}>

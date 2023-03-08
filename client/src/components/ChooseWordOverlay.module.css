@@ -1,0 +1,31 @@
+.overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+.wordsWrapper {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.word {
+  padding: 1rem 3rem;
+  max-width: 3rem;
+  width: 100%;
+  background: #564472;
+  color: white;
+  border: 2px solid #4D8076;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+}
+
+.title {
+  color: #564472;
+}

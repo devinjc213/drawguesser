@@ -22,6 +22,7 @@ type GameRoomType = {
 }
 
 const httpServer = createServer();
+
 export const io = new Server(httpServer, {
 	cors: {
 		origin: "*"
@@ -91,8 +92,12 @@ io.on("connection", (socket) => {
   });
 
 	socket.on('start_game', data => {
-		GameRoomState[data.room].roundStart();			
+		GameRoomState[data.room].pickWordRound();			
 	});
+
+  socket.on('selected_word', data => {
+    GameRoomState[data.room].setSelectedWord(data.word);
+  })
 
   socket.on('leave_room', data => {
     GameRoomState[data.room].playerLeft(socket.id);

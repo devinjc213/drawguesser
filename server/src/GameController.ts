@@ -16,6 +16,7 @@ export default class GameController {
 	private currentIntermissionTimer: number;
 	private numberOfRounds: number;
 	private words: string[];
+  private wordsToDraw: string[];
   private selectedWord: string;
   private playersGuessedCorrect: User[];
 	private interval: any;
@@ -30,10 +31,11 @@ export default class GameController {
 		this.currentRound = 1;
 		this.roundTimer = 15;
 		this.currentRoundTimer = this.roundTimer;
-		this.intermissionTimer = 10;
+		this.intermissionTimer = 15;
 		this.currentIntermissionTimer = this.intermissionTimer;
 		this.numberOfRounds = 3;
 		this.words = JSON.parse(fs.readFileSync(__dirname + '/1000_words.json', 'utf8')); 
+    this.wordsToDraw = [];
     this.selectedWord = "";
     this.playersGuessedCorrect = [];
 		this.interval = null;
@@ -52,9 +54,17 @@ export default class GameController {
       io.to(this.room).emit('round_timer', this.currentRoundTimer);
 
     } else if (cdType === "intermission") { 
-      if (this.currentIntermissionTimer > 0) this.currentIntermissionTimer -= 1;
-      else {
+      if (this.currentIntermissionTimer > 0) {
+        if (this.selectedWord) this.currentIntermissionTimer = 3;
+        else this.currentIntermissionTimer -= 1;
+      } else {
         clearInterval(this.interval);
+       
+        if (!this.selectedWord) {
+          this.selectedWord = this.wordsToDraw[Math.floor(Math.random() * this.wordsToDraw.length)]; 
+          io.to(Object.keys(this.drawer)[0]).emit('selected_word', this.selectedWord);
+        }
+        
         this.roundStart();
       }
 
@@ -125,16 +135,30 @@ export default class GameController {
     }
   }
 
-  pickDrawWord() {
-    const drawWords: string[] = [];
-    while (drawWords.length < 4) {
-      drawWords.push(this.words[Math.floor(Math.random() * this.words.length)])
+  sendWordsToDrawer() {
+    while (this.wordsToDraw.length < 4) {
+      this.wordsToDraw.push(this.words[Math.floor(Math.random() * this.words.length)])
     }
+
+    io.to(Object.keys(this.drawer)[0]).emit('draw_words', this.wordsToDraw);
+  }
+  
+  setSelectedWord(word: string) {
+    this.selectedWord = word;
+    this.currentIntermissionTimer = 3;
+    io.to(Object.keys(this.drawer)[0]).emit('selected_word', this.selectedWord);
+  }
+
+  pickWordRound() {
+    this.sendWordsToDrawer();
+    this.currentIntermissionTimer = this.intermissionTimer;
+    this.interval = setInterval(this.countdown.bind(this, "intermission"), 1000);
+    this.countdown("intermission");
   }
 
 	roundStart() {
-    this.pickDrawWord();
     this.players.forEach(player => player[Object.keys(player)[0]].ready = false);
+    this.wordsToDraw = [];
     io.to(this.room).emit('players_in_room', this.players);
 		this.roundIsStarted = true;
     this.currentIntermissionTimer = this.intermissionTimer;

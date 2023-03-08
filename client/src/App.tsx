@@ -24,6 +24,7 @@ const App: Component = () => {
 	const [room, setRoom] = createSignal<string>("lobby");
 	const [name, setName] = createSignal<string>("");
 	const [drawer, setDrawer] = createSignal<User>({});
+  const [selectedWord, setSelectedWord] = createSignal<string>("");
   const [currentRound, setCurrentRound] = createSignal<number>(1);
 	const [roundStarted, setRoundStarted] = createSignal<boolean>(false);
 	const [currentRoundTime, setCurrentRoundTime] = createSignal<number>(45);
@@ -52,12 +53,17 @@ const App: Component = () => {
     setRoundStarted(false);
     setCurrentRound(curRound);
   });
+
   socket.on('initial_rooms', (rounds) => {
     setInitialRooms(rounds);
   });
 
   socket.on('room_init', user => {
     setDrawer(user);
+  });
+
+  socket.on('selected_word', word => {
+    setSelectedWord(word);
   });
 
   return (
@@ -76,7 +82,7 @@ const App: Component = () => {
               Hint
             </div>
           </div>
-          <div class={styles.gameBody}>
+          <div class={styles.gameBody}> 
             <div class={styles.leftColumn}>
               <PlayerList socket={socket} />
               <GameControls
@@ -95,7 +101,12 @@ const App: Component = () => {
               room={room()}
               roundStarted={roundStarted()}
             />
-            <Canvas socket={socket} isDrawer={socket.id === Object.keys(drawer())[0]} />
+            <Canvas
+              socket={socket}
+              room={room()}
+              isDrawer={socket.id === Object.keys(drawer())[0]}
+              selectedWord={selectedWord()}
+            />
           </div>
 				</div>
 			</Show>	
