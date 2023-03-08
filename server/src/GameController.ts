@@ -54,17 +54,9 @@ export default class GameController {
       io.to(this.room).emit('round_timer', this.currentRoundTimer);
 
     } else if (cdType === "intermission") { 
-      if (this.currentIntermissionTimer > 0) {
-        if (this.selectedWord) this.currentIntermissionTimer = 3;
-        else this.currentIntermissionTimer -= 1;
-      } else {
+      if (this.currentIntermissionTimer > 0) this.currentIntermissionTimer -= 1;
+      else {
         clearInterval(this.interval);
-       
-        if (!this.selectedWord) {
-          this.selectedWord = this.wordsToDraw[Math.floor(Math.random() * this.wordsToDraw.length)]; 
-          io.to(Object.keys(this.drawer)[0]).emit('selected_word', this.selectedWord);
-        }
-        
         this.roundStart();
       }
 
@@ -145,7 +137,6 @@ export default class GameController {
   
   setSelectedWord(word: string) {
     this.selectedWord = word;
-    this.currentIntermissionTimer = 3;
     io.to(Object.keys(this.drawer)[0]).emit('selected_word', this.selectedWord);
   }
 
