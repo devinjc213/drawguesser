@@ -1,4 +1,4 @@
-import { createSignal, createEffect, onMount, onCleanup, For, Show } from 'solid-js';
+import { createSignal, Show } from 'solid-js';
 import type { Component } from 'solid-js';
 import { io } from "socket.io-client";
 import NameModal from './components/NameModal';
@@ -36,8 +36,7 @@ const App: Component = () => {
 		setRoom(room);
 	});
  
-	socket.on('round_start', data => {
-		setDrawer(data.drawer);
+	socket.on('round_start', () => {
 		setRoundStarted(true);
 	});
 	
@@ -58,12 +57,13 @@ const App: Component = () => {
     setInitialRooms(rounds);
   });
 
-  socket.on('room_init', user => {
+  socket.on('drawer_update', user => {
     setDrawer(user);
   });
 
   socket.on('selected_word', word => {
     setSelectedWord(word);
+    console.log(word);
   });
 
   return (
@@ -84,7 +84,7 @@ const App: Component = () => {
           </div>
           <div class={styles.gameBody}> 
             <div class={styles.leftColumn}>
-              <PlayerList socket={socket} />
+              <PlayerList socket={socket} drawer={drawer()} />
               <GameControls
                 socket={socket}
                 room={room()}
@@ -105,6 +105,7 @@ const App: Component = () => {
               socket={socket}
               room={room()}
               isDrawer={socket.id === Object.keys(drawer())[0]}
+              isRoundStarted={roundStarted()}
               selectedWord={selectedWord()}
             />
           </div>

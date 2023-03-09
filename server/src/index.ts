@@ -107,9 +107,7 @@ io.on("connection", (socket) => {
   socket.on('disconnecting', () => {
     const room = Array.from(socket.rooms)[1];
     if (room !== "lobby") GameRoomState[room].playerLeft(socket.id); 
-  });
 
-  socket.on('disconnect', () => {
     for (const game in GameRoomState) {
       if (GameRoomState[game].players.length === 0) {
         delete GameRoomState[game]
@@ -117,6 +115,7 @@ io.on("connection", (socket) => {
       }
     }
   });
+
 });
 
 httpServer.listen(4000);

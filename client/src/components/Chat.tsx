@@ -62,10 +62,6 @@ const Chat: Component<{
     setChat(chat => [...chat, { name: 'SERVER', msg: msg, serverMsg: true }]);
   });
 
-  props.socket.on('round_start', data => {
-    setChat(chat => [...chat, { name: 'SERVER', msg: data.msg, serverMsg: true }]);
-  });
-
   return (
     <div class={styles.chatWrapper}>
       <div class={styles.chat}>

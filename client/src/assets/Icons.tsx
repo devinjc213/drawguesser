@@ -7,6 +7,7 @@ import LeaveRoom from './leave-room.svg';
 import GreenCheck from './Green_check.svg';
 import Sound from './Sound-icon.svg';
 import NoSign from './No_sign.svg';
+import Pencil from './Pencil.svg';
 
 export const Icons = {
   Eraser,
@@ -17,6 +18,7 @@ export const Icons = {
   LeaveRoom,
   GreenCheck,
   Sound,
-  NoSign
+  NoSign,
+  Pencil
 }
 

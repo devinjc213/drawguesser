@@ -7,6 +7,7 @@ import styles from "./PlayerList.module.css";
 
 const PlayerList: Component<{
   socket: Socket,
+  drawer: User
 }> = (props) => {
   const [playersInRoom, setPlayersInRoom] = createSignal<User[]>([]);
 
@@ -18,6 +19,7 @@ const PlayerList: Component<{
     setPlayersInRoom(user);
   });
 
+
   return (
     <div class={styles.playersWrapper}>
       <div class={styles.playersInRoom}>
@@ -26,6 +28,9 @@ const PlayerList: Component<{
             <div class={styles.playerNameWrapper}>
               <span class={Object.values(player)[0].ready ? styles.greenText: ''}>
                 {Object.values(player)[0].name}
+                <Show when={Object.keys(player)[0] === Object.keys(props.drawer)[0]}>
+                  <img src={Icons.Pencil} height="16" width="16" alt="drawer" />
+                </Show>
               </span>
               <span>
                 <Show

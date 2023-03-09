@@ -21,7 +21,8 @@ const Canvas: Component<{
   socket: Socket,
   room: string,
   isDrawer: boolean,
-  selectedWord: string
+  selectedWord: string,
+  isRoundStarted: boolean
 }> = (props) => {
   const [paintTool, setPaintTool] = createSignal<"brush" | "bucket">("brush");
 	const [drawColor, setDrawColor] = createSignal<string>("#000000");
@@ -78,7 +79,12 @@ const Canvas: Component<{
   }
 
 	const draw = (e: any) => {
-		if (e.buttons !== 1 || paintTool() === "bucket" || outOfBounds(pos().x, pos().y)) return;
+		if (e.buttons !== 1
+          || paintTool() === "bucket"
+          || outOfBounds(pos().x, pos().y)
+          || !props.isDrawer
+          || !props.isRoundStarted
+        ) return;
 		ctx.beginPath();
 
 		ctx.lineWidth = brushSize();
@@ -180,7 +186,7 @@ const Canvas: Component<{
   }
 
   const bucket = (e: any) => {
-    if (paintTool() !== "bucket") return;
+    if (paintTool() !== "bucket" || !props.isDrawer) return;
     imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     handlePos(e);
     const clickedColor = getColorAtPos(imageData, pos().x, pos().y);
@@ -241,13 +247,13 @@ const Canvas: Component<{
     lastY = 0;
   });
 
-	props.socket.on('clear_canvas', (data) => {
-    if (data.id !== props.socket.id) handleClear();
+	props.socket.on('clear_canvas', () => {
+    handleClear();
   });
 
   props.socket.on('draw_words', words => {
     setDrawWords(words);
-    console.log(words);
+    console.log(drawWords(), props.selectedWord);
   });
 
 	return (
