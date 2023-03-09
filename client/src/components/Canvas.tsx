@@ -1,8 +1,9 @@
 import type { Component } from "solid-js";
-import {createSignal, onCleanup, onMount} from "solid-js";
+import {createSignal, onCleanup, onMount, Show} from "solid-js";
 import type { Socket } from "socket.io-client";
 import { Icons } from '../assets/Icons';
 import styles from './Canvas.module.css';
+import ChooseWordOverlay from "./ChooseWordOverlay";
 
 type Pos = {
   x: number
@@ -16,10 +17,17 @@ type RGB = {
   a: number
 }
 
-const Canvas: Component<{ socket: Socket, isDrawer: boolean }> = (props) => {
+const Canvas: Component<{
+  socket: Socket,
+  room: string,
+  isDrawer: boolean,
+  selectedWord: string,
+  isRoundStarted: boolean
+}> = (props) => {
   const [paintTool, setPaintTool] = createSignal<"brush" | "bucket">("brush");
 	const [drawColor, setDrawColor] = createSignal<string>("#000000");
 	const [brushSize, setBrushSize] = createSignal<number>(5);
+  const [drawWords, setDrawWords] = createSignal<string[]>([]);
 	const [pos, setPos] = createSignal<{ x: number, y: number}>({x:0,y:0});
 	let rect: any;
 	let canvas: any;
@@ -71,7 +79,12 @@ const Canvas: Component<{ socket: Socket, isDrawer: boolean }> = (props) => {
   }
 
 	const draw = (e: any) => {
-		if (e.buttons !== 1 || paintTool() === "bucket" || outOfBounds(pos().x, pos().y)) return;
+		if (e.buttons !== 1
+          || paintTool() === "bucket"
+          || outOfBounds(pos().x, pos().y)
+          || !props.isDrawer
+          || !props.isRoundStarted
+        ) return;
 		ctx.beginPath();
 
 		ctx.lineWidth = brushSize();
@@ -173,7 +186,7 @@ const Canvas: Component<{ socket: Socket, isDrawer: boolean }> = (props) => {
   }
 
   const bucket = (e: any) => {
-    if (paintTool() !== "bucket") return;
+    if (paintTool() !== "bucket" || !props.isDrawer) return;
     imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     handlePos(e);
     const clickedColor = getColorAtPos(imageData, pos().x, pos().y);
@@ -234,14 +247,21 @@ const Canvas: Component<{ socket: Socket, isDrawer: boolean }> = (props) => {
     lastY = 0;
   });
 
-	props.socket.on('clear_canvas', (data) => {
-    if (data.id !== props.socket.id) handleClear();
+	props.socket.on('clear_canvas', () => {
+    handleClear();
+  });
+
+  props.socket.on('draw_words', words => {
+    setDrawWords(words);
   });
 
 	return (
 		<div class={styles.canvasContainer}>
       <div class={styles.canvasWrapper}>
         <canvas ref={canvas} width="720" height="500"></canvas>
+        <Show when={!props.selectedWord && drawWords().length > 0}>
+          <ChooseWordOverlay socket={props.socket} room={props.room} words={drawWords()} />
+        </Show>
       </div>
 			<div class={styles.controls}>
         <div class={styles.brushSizeContainer}>

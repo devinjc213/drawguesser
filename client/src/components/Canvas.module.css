@@ -38,6 +38,7 @@
 
 .canvasWrapper {
   background: #4D8076;
+  position: relative;
   border-radius: 8px;
   padding: 0.5rem;
 }
