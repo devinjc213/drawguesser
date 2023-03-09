@@ -253,7 +253,6 @@ const Canvas: Component<{
 
   props.socket.on('draw_words', words => {
     setDrawWords(words);
-    console.log(drawWords(), props.selectedWord);
   });
 
 	return (

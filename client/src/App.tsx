@@ -63,7 +63,6 @@ const App: Component = () => {
 
   socket.on('selected_word', word => {
     setSelectedWord(word);
-    console.log(word);
   });
 
   return (
