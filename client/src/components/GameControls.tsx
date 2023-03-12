@@ -10,6 +10,7 @@ const GameControls: Component<{
   room: string,
   drawer: User,
   name: string,
+  gameStarted: boolean,
   roundStarted: boolean,
   setRoom: Setter<string>
 }> = (props) => {
@@ -40,48 +41,54 @@ const GameControls: Component<{
 
   return ( 
     <div class={styles.gameControlWrapper}>
-      <div
-        class={ready() ?
-          `${styles.divBtn} ${styles.unreadyBtn}`
-          : `${styles.divBtn} ${styles.readyBtn}`}
-        onClick={() => handleReady()}
-      >
-        {ready() ? 'Unready' : 'Ready'}
-      </div>
-      <Show
-        when={props.name && !props.roundStarted && Object.keys(props.drawer)[0] === props.socket.id}
-      >
+      <Show when={!props.gameStarted}>
         <div
-          class={canStart()
-            ? `${styles.divBtn} ${styles.readyBtn}`
-            : `${styles.divBtn} ${styles.disabledBtn}`}
-          onClick={() => {
-            if (canStart()) handleStart();
-          }}
-        >
-          Start
+          class={ready() ?
+            `${styles.divBtn} ${styles.unreadyBtn}`
+            : `${styles.divBtn} ${styles.readyBtn}`}
+          onClick={() => handleReady()}
+          >
+          {ready() ? 'Unready' : 'Ready'}
         </div>
+          <Show
+            when={props.name
+                  && !props.roundStarted
+                  && Object.keys(props.drawer)[0] === props.socket.id}
+          >
+            <div
+              class={canStart()
+                ? `${styles.divBtn} ${styles.readyBtn}`
+                : `${styles.divBtn} ${styles.disabledBtn}`}
+              onClick={() => {
+                if (canStart()) handleStart();
+              }}
+            >
+              Start
+            </div>
+          </Show> 
       </Show>
-      <div class={styles.soundWrapper}>
-        <img
-          src={Icons.Sound}
-          alt="mute"
-          height="36"
-          width="36"
-          onClick={() => setMute(true)}
-        />
-        <Show when={mute()}>
+      <div class={styles.bottomControls}>
+        <div class={styles.soundWrapper}>
           <img
-            src={Icons.NoSign}
-            class={styles.noSign}
-            height="48"
-            width="48"
-            alt="unmute" 
-            onClick={() => setMute(false)}
+            src={Icons.Sound}
+            alt="mute"
+            height="36"
+            width="36"
+            onClick={() => setMute(true)}
           />
-        </Show>
+          <Show when={mute()}>
+            <img
+              src={Icons.NoSign}
+              class={styles.noSign}
+              height="48"
+              width="48"
+              alt="unmute" 
+              onClick={() => setMute(false)}
+            />
+          </Show>
+        </div>
+        <img src={Icons.LeaveRoom} alt="Leave room" onClick={() => handleLeaveRoom()} /> 
       </div>
-      <img src={Icons.LeaveRoom} alt="Leave room" onClick={() => handleLeaveRoom()} /> 
     </div>
   )  
 }

@@ -1,4 +1,4 @@
-import { createSignal, Show } from 'solid-js';
+import { createSignal, Show, onCleanup } from 'solid-js';
 import type { Component } from 'solid-js';
 import { io } from "socket.io-client";
 import NameModal from './components/NameModal';
@@ -20,29 +20,27 @@ export type User = {
   }
 }
 
+//need to clear all data on leave room button
 const App: Component = () => {
 	const [room, setRoom] = createSignal<string>("lobby");
 	const [name, setName] = createSignal<string>("");
 	const [drawer, setDrawer] = createSignal<User>({});
   const [selectedWord, setSelectedWord] = createSignal<string>("");
   const [currentRound, setCurrentRound] = createSignal<number>(1);
+  const [gameStarted, setGameStarted] = createSignal<boolean>(false);
 	const [roundStarted, setRoundStarted] = createSignal<boolean>(false);
 	const [currentRoundTime, setCurrentRoundTime] = createSignal<number>(45);
   const [currentIntermissionTimer, setCurrentIntermissionTimer] =
     createSignal<number>();
   const [initialRooms, setInitialRooms] = createSignal<string[]>();
+
+  onCleanup(() => socket.disconnect());
 		
-	socket.on('create_join_room', room => {
-		setRoom(room);
-	});
+	socket.on('create_join_room', room => setRoom(room));
  
-	socket.on('round_start', () => {
-		setRoundStarted(true);
-	});
+	socket.on('round_start', () => setRoundStarted(true));
 	
-	socket.on('round_timer', (timer: number) => {
-		setCurrentRoundTime(timer);
-	});
+	socket.on('round_timer', (timer: number) => setCurrentRoundTime(timer));
 
   socket.on('intermission_timer', (timer: number) => {
     setCurrentIntermissionTimer(timer);
@@ -51,18 +49,17 @@ const App: Component = () => {
   socket.on('round_end', (curRound) => {
     setRoundStarted(false);
     setCurrentRound(curRound);
+    setSelectedWord("");
   });
 
-  socket.on('initial_rooms', (rounds) => {
-    setInitialRooms(rounds);
-  });
+  socket.on('initial_rooms', (rounds) => setInitialRooms(rounds));
 
-  socket.on('drawer_update', user => {
-    setDrawer(user);
-  });
+  socket.on('drawer_update', user => setDrawer(user));
 
-  socket.on('selected_word', word => {
-    setSelectedWord(word);
+  socket.on('selected_word', word => setSelectedWord(word));
+
+  socket.on('game_is_started', (gameIsStarted) => {
+      setGameStarted(gameIsStarted);
   });
 
   return (
@@ -91,6 +88,7 @@ const App: Component = () => {
                 name={name()}
                 roundStarted={roundStarted()}
                 setRoom={setRoom}
+                gameStarted={gameStarted()}
               />
             </div>
             <Chat
