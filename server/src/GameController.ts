@@ -8,6 +8,7 @@ export default class GameController {
 	private socket: Socket;
 	private maxNumberOfPlayers: number;
 	private drawer: User;
+  private gameIsStarted: boolean;
 	private roundIsStarted: boolean;
 	private currentRound: number;
 	private roundTimer: number;
@@ -29,9 +30,10 @@ export default class GameController {
 		this.socket = socket;
 		this.maxNumberOfPlayers = 8;
 		this.drawer = players[0];
+    this.gameIsStarted = false;
 		this.roundIsStarted = false;
 		this.currentRound = 1;
-		this.roundTimer = 15;
+		this.roundTimer = 80;
 		this.currentRoundTimer = this.roundTimer;
 		this.chooseDrawWordTimer= 15;
 		this.currentChooseDrawWordTimer = this.chooseDrawWordTimer;
@@ -47,6 +49,7 @@ export default class GameController {
     io.to(this.room).emit('drawer_update', this.drawer);
 	}
 
+  //countdowns for the game round, picking a word to draw, and start countdown 
 	countdown(cdType: "round" | "chooseDrawWord" | "3sec") {	
     if (cdType === "round") {
       if (this.currentRoundTimer > 0) this.currentRoundTimer -= 1;
@@ -67,7 +70,9 @@ export default class GameController {
           this.countdown("3sec");
         }
       } else {
-        this.setSelectedWord(this.wordsToDraw[Math.floor(Math.random() * this.wordsToDraw.length)]);
+        this.setSelectedWord(this.wordsToDraw[Math.floor(Math.random()
+          * this.wordsToDraw.length)]);
+        
         clearInterval(this.interval);
         this.interval = setInterval(this.countdown.bind(this, "3sec"), 1000);
         this.countdown("3sec");
@@ -86,6 +91,8 @@ export default class GameController {
     }
 	}
 
+  //Dont let drawer type, add a correct guess to array, end round if all 
+  //users have guessed
 	handleMessage({ socketId, name, msg, room }: MessageType) {
     if (this.roundIsStarted && socketId === Object.keys(this.drawer)[0]) return;
 
@@ -94,9 +101,12 @@ export default class GameController {
 		} else {
 			if (msg === this.selectedWord) {
 				io.to(this.room).emit('server_message', `${name} guessed the word!`);
+
         this.playersGuessedCorrect.push({ [socketId]: { name } });
-        if (this.playersGuessedCorrect.length === this.players.length) {
+        
+        if (this.playersGuessedCorrect.length === this.players.length - 1) {
           io.to(this.room).emit('server_message', 'All users have guessed the word!');
+         
           this.drawRoundEnd();
         }
 			} else if (!Object.keys(this.playersGuessedCorrect).includes(socketId)) {
@@ -105,9 +115,11 @@ export default class GameController {
 		}
 	} 
 
+  //shuffle users at end of round or word arrays
 	shuffle(array: User[] | []) {
 		let currentIndex = array.length;
 		let randomIndex: number;
+
 		while (currentIndex != 0) {
 			randomIndex = Math.floor(Math.random() * currentIndex);
 			currentIndex--;
@@ -119,16 +131,22 @@ export default class GameController {
 		return array;
 	}
 
+  //add player to state and emit to others
+  //TODO: broadcast current timer if user joins in the middle of one
 	playerJoined(player: User) {
 		this.players = [...this.players, player];
     io.to(this.room).emit('players_in_room', this.players);
     io.to(this.room).emit('drawer_update', this.drawer);
 	}
   
+  //remove player from state and decide a new drawer (depending on leaving
+  //players position in array), broadcast to room
   playerLeft(id: string) {
-    const playerIndex = this.players.findIndex(player => Object.keys(player)[0] === id);
+    const playerIndex = this.players
+      .findIndex(player => Object.keys(player)[0] === id);
 
-    if (this.drawer === this.players[playerIndex] && playerIndex < this.players.length - 1) {
+    if (this.drawer === this.players[playerIndex]
+        && playerIndex < this.players.length - 1) {
       this.drawer = this.players[playerIndex + 1];
     } else {
       this.drawer = this.players[0];
@@ -138,10 +156,15 @@ export default class GameController {
     io.to(this.room).emit('players_in_room', this.players);
   }
 
+  //handle player ready and emit when all users are ready
   playerReady(id: string) {
-    const playerIndex = this.players.findIndex(player => Object.keys(player)[0] === id);
+    const playerIndex = this.players
+      .findIndex(player => Object.keys(player)[0] === id);
+
     this.players[playerIndex][id].ready = !this.players[playerIndex][id].ready;
+    
     io.to(this.room).emit('players_in_room', this.players);
+    
     if (this.players.findIndex(player => !Object.values(player)[0].ready) === -1) {
       io.to(Object.keys(this.drawer)[0]).emit('can_start', true);
     } else {
@@ -149,41 +172,65 @@ export default class GameController {
     }
   }
 
+  //select 4 words and send to drawer.  need to add check for adding the same
+  //word twice
   sendWordsToDrawer() {
     while (this.wordsToDraw.length < 4) {
       this.wordsToDraw.push(this.words[Math.floor(Math.random() * this.words.length - 1)])
     }
 
-    io.to(Object.keys(this.drawer)[0]).emit('draw_words', this.wordsToDraw);
+    const drawerId = this.drawer && Object.keys(this.drawer)[0];
+    io.to(drawerId).emit('draw_words', this.wordsToDraw);
   }
   
   setSelectedWord(word: string) {
     this.selectedWord = word;
-    io.to(Object.keys(this.drawer)[0]).emit('selected_word', this.selectedWord);
+    if (this.drawer) {
+      io.to(Object.keys(this.drawer)[0]).emit('selected_word', this.selectedWord);
+    }
   }
 
+  //round where drawer picks from a list of words.
+  //a word is automatically selected from the 4 if the time runs out
   pickWordRound() {
     clearInterval(this.interval);
     this.interval = null;
-    this.currentChooseDrawWordTimer = this.chooseDrawWordTimer;
+    
     this.sendWordsToDrawer();
+    
     this.currentChooseDrawWordTimer = this.chooseDrawWordTimer;
     this.interval = setInterval(this.countdown.bind(this, "chooseDrawWord"), 1000);
     this.countdown("chooseDrawWord");
   }
 
+  gameStart() {
+    this.players = this.shuffle(this.players);
+    this.drawer = this.players[0];
+    io.to(this.room).emit('drawer_update', this.drawer);
+    
+    this.gameIsStarted = true;
+    io.to(this.room).emit('game_is_started', this.gameIsStarted);
+
+    this.players.forEach(player => player[Object.keys(player)[0]].ready = false);
+    io.to(this.room).emit('players_in_room', this.players);
+
+    this.pickWordRound();
+  }
+
 	drawRoundStart() {
     clearInterval(this.interval);
     this.interval = null;
+    
     this.currentRoundTimer = this.roundTimer;
-    this.players.forEach(player => player[Object.keys(player)[0]].ready = false);
+    
     this.wordsToDraw = [];
-    io.to(this.room).emit('players_in_room', this.players);
-		this.roundIsStarted = true;
-		this.interval = setInterval(this.countdown.bind(this, "round"), 1000);
-		this.players = this.shuffle(this.players);
-		this.countdown("round");
+		
+    this.roundIsStarted = true;
     io.to(this.room).emit('round_start');
+
+		this.interval = setInterval(this.countdown.bind(this, "round"), 1000);
+		this.countdown("round");
+    
 		io.to(this.room).emit('server_message',
       `Round has started. ${Object.values(this.drawer)[0].name} is drawing`);
 	}
@@ -191,16 +238,23 @@ export default class GameController {
 	drawRoundEnd() {
     clearInterval(this.interval);
     this.interval = null;
+    
     io.to(this.room).emit('clear_canvas');
     io.to(this.room).emit('clear_pos');
-		this.currentRoundTimer = this.roundTimer;
+		
+    this.currentRoundTimer = this.roundTimer;
     this.currentRoundStartTime = this.roundStartTime;
     this.currentChooseDrawWordTimer = this.chooseDrawWordTimer;
+    
     this.wordsToDraw = [];
 
     if (this.playersGuessedCorrect.length > 0) {
+      const players = this.playersGuessedCorrect
+        .map(player => Object.values(player)[0].name)
+        .join(', ');
+      
       io.to(this.room).emit('server_message', `The word was ${this.selectedWord}.
-        ${Object.values(this.playersGuessedCorrect).join(', ')} guessed correctly!`);
+        ${players} guessed correctly!`);
     } else {
       io.to(this.room).emit('server_message', `The word was ${this.selectedWord}. 
         No one guessed the word :(`)
@@ -211,18 +265,26 @@ export default class GameController {
     const playerIndex = this.players
       .findIndex(player => Object.keys(player)[0] === Object.keys(this.drawer)[0]);
 
-    if (this.drawer === this.players[playerIndex] && playerIndex < this.players.length - 1) {
+    if (this.drawer === this.players[playerIndex]
+        && playerIndex < this.players.length - 1) {
       this.drawer = this.players[playerIndex + 1];
     } else {
       this.drawer = this.players[0];
+      
       this.currentRound++;
+      
       io.to(this.room).emit('round_end', this.currentRound);
     }
 
     io.to(this.room).emit('drawer_update', this.drawer);
+    
     this.setSelectedWord("");
 
     this.pickWordRound();
 	}
+
+  gameEnd() {
+    io.to(this.room).emit('game_ended');
+  }
 }
 

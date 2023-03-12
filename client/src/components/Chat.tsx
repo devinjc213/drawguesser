@@ -1,7 +1,7 @@
 import type { Component } from 'solid-js';
 import type { Socket } from 'socket.io-client';
 import type { User } from '../App';
-import { For, createSignal, onMount, onCleanup } from 'solid-js';
+import { For, createSignal, createEffect, onMount, onCleanup } from 'solid-js';
 import styles from './Chat.module.css';
 
 type MessageType = {
@@ -19,6 +19,7 @@ const Chat: Component<{
 }> = (props) => {
   const [chat, setChat] = createSignal<MessageType[]>([]);
   const [message, setMessage] = createSignal<string>("");
+  let chatRef: any;
 
   onMount(() => {
 		document.addEventListener("keypress", (e) => {
@@ -27,6 +28,10 @@ const Chat: Component<{
 				handleSendMessage();
 			}
 		});
+
+    document.addEventListener("DOMNodeInserted", (e) => {
+      chatRef.scroll({ top: chatRef.scrollHeight, behavior: "smooth" });
+    });
 	});
 
 	onCleanup(() => {
@@ -64,11 +69,11 @@ const Chat: Component<{
 
   return (
     <div class={styles.chatWrapper}>
-      <div class={styles.chat}>
+      <div ref={chatRef} class={styles.chat}>
         <For each={chat()}>
           {(msg: MessageType) => {
             if (msg.serverMsg) {
-              return <div><b>{msg.msg}</b></div>;
+              return <div><hr /><b>{msg.msg}</b><hr /></div>;
             } else {
               return (
                 <div class={styles.chatMsg}>

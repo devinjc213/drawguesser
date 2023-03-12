@@ -1,13 +1,15 @@
 .gameControlWrapper {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
   background: #4D8076;
   border-radius: 8px;
   height: 50%;
   padding: 0.5rem 0;
   padding: 1rem;
+  min-width: 120px;
+  gap: 1.75rem;
 }
 
 .soundWrapper {
@@ -53,4 +55,11 @@
   background: #B0A8B9;
   opacity: 0.7;
   cursor: default;
+}
+
+.bottomControls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
 }

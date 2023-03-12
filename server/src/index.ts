@@ -2,6 +2,8 @@ import { createServer } from "http";
 import { Server } from "socket.io";
 import GameController from './GameController';
 
+//dont like this implementation, need to think of something better
+//drawer needs to be a field and not stored separately in client and server
 export type User = {
   [key: string]: {
     name: string 
@@ -92,7 +94,7 @@ io.on("connection", (socket) => {
   });
 
 	socket.on('start_game', data => {
-		GameRoomState[data.room].pickWordRound();			
+		GameRoomState[data.room].gameStart();			
 	});
 
   socket.on('selected_word', data => {

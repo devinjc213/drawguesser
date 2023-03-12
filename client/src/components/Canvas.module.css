@@ -94,3 +94,12 @@
   width: 200px;
   height: 300px; 
 }
+
+.wordOverlay {
+  position: absolute;
+  top: -1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  font-weight: 700;
+  color: #FAEAFF;
+}
