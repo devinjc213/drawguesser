@@ -7,7 +7,7 @@ import GameController from './GameController';
 export type User = {
   [key: string]: {
     name: string 
-    score?: number
+    score: number
     ready?: boolean
   }
 }
@@ -75,7 +75,7 @@ io.on("connection", (socket) => {
 		socket.leave("lobby");
 		io.to(socket.id).emit("create_join_room", data.room);
 
-		const game = new GameController(data.room, [{ [socket.id]: { name: data.name } }], socket);
+		const game = new GameController(data.room, [{ [socket.id]: { name: data.name, score: 0 } }], socket);
 		GameRoomState[data.room] = game;
 	
     io.emit('room_update', Object.keys(GameRoomState));
@@ -86,7 +86,7 @@ io.on("connection", (socket) => {
 		socket.join(data.room);
 		socket.leave("lobby");
 		io.to(data.room).emit('user_joined', data.name);
-		GameRoomState[data.room].playerJoined({ [socket.id]: { name: data.name } })
+		GameRoomState[data.room].playerJoined({ [socket.id]: { name: data.name, score: 0 } })
 	});
 
   socket.on('player_ready', data => {
