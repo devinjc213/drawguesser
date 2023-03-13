@@ -130,22 +130,14 @@ export default class GameController {
     const timeBonus = Math.ceil(currentTime / 2);
     const score = basePoints - guessOrderPenalty + timeBonus;
     
-    if (Object.values(this.players[playerIndex])[0].score > 0) {
-      Object.values(this.players[playerIndex])[0].score += score;
-    } else {
-      Object.values(this.players[playerIndex])[0].score = score;
-    }
+    Object.values(this.players[playerIndex])[0].score += score;
 
-    if (Object.values(this.players[drawerIndex])[0].score > 0) {
-      Object.values(this.players[drawerIndex])[0].score += 10;
-    } else {
-      Object.values(this.players[drawerIndex])[0].score = 10;
-    }
+    Object.values(this.players[drawerIndex])[0].score += 10;
 
     io.to(this.room).emit('players_in_room', this.players);
   }
 
-  //shuffle users at end of round or word arrays
+  //shuffle users for a new game whatever other arrays
 	shuffle(array: User[] | []) {
 		let currentIndex = array.length;
 		let randomIndex: number;
