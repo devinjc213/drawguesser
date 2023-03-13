@@ -102,7 +102,7 @@ export default class GameController {
 			if (msg === this.selectedWord) {
 				io.to(this.room).emit('server_message', `${name} guessed the word!`);
 
-        this.playersGuessedCorrect.push({ [socketId]: { name } });
+        this.handleScore(socketId, this.currentRoundTimer);
         
         if (this.playersGuessedCorrect.length === this.players.length - 1) {
           io.to(this.room).emit('server_message', 'All users have guessed the word!');
@@ -114,6 +114,36 @@ export default class GameController {
 			}	
 		}
 	} 
+
+
+  handleScore(socketId: string, currentTime: number) {
+    const playerIndex = this.players
+      .findIndex(player => Object.keys(player)[0] === socketId);
+
+    const drawerIndex = this.players
+      .findIndex(player => Object.keys(player)[0] === Object.keys(this.drawer)[0]);
+
+    this.playersGuessedCorrect.push(this.players[playerIndex]);
+
+    const basePoints = this.players.length * 10;
+    const guessOrderPenalty = this.playersGuessedCorrect.length * 10;
+    const timeBonus = Math.ceil(currentTime / 2);
+    const score = basePoints - guessOrderPenalty + timeBonus;
+    
+    if (Object.values(this.players[playerIndex])[0].score > 0) {
+      Object.values(this.players[playerIndex])[0].score += score;
+    } else {
+      Object.values(this.players[playerIndex])[0].score = score;
+    }
+
+    if (Object.values(this.players[drawerIndex])[0].score > 0) {
+      Object.values(this.players[drawerIndex])[0].score += 10;
+    } else {
+      Object.values(this.players[drawerIndex])[0].score = 10;
+    }
+
+    io.to(this.room).emit('players_in_room', this.players);
+  }
 
   //shuffle users at end of round or word arrays
 	shuffle(array: User[] | []) {
