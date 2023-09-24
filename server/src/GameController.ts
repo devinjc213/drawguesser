@@ -8,6 +8,7 @@ export default class GameController {
 	private socket: Socket;
 	private maxNumberOfPlayers: number;
 	private drawer: User;
+  private hintEnabledAfter: number;
   private gameIsStarted: boolean;
 	private roundIsStarted: boolean;
 	private currentRound: number;
@@ -41,6 +42,7 @@ export default class GameController {
     this.maxNumberOfPlayers = 8;
     this.maxHintsGiven = 10;
     this.roundStartTime = 5;
+    this.hintEnabledAfter = 30;
     this.words = JSON.parse(fs.readFileSync(__dirname + '/1000_words.json', 'utf8'));
 
     /*
@@ -69,7 +71,7 @@ export default class GameController {
   //countdowns for the game round, picking a word to draw, and start countdown 
 	countdown(cdType: "round" | "chooseDrawWord" | "3sec") {	
     if (cdType === "round") {
-      if (this.currentRoundTimer === this.roundTimer - 30) {
+      if (this.currentRoundTimer === this.roundTimer - this.hintEnabledAfter) {
         io.to(this.room).emit('hint_enabled', true);
       }
       if (this.currentRoundTimer > 0) this.currentRoundTimer -= 1;

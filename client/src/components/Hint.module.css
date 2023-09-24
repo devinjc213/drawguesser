@@ -22,7 +22,7 @@
     display: block;
     width: 0.75rem;
     border-bottom: solid;
-    margin: 0.25rem;
+    margin: 0 0.25rem 0.25rem 0.25rem;
 }
 
 .underline {
