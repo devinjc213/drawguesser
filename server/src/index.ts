@@ -1,5 +1,5 @@
-import { createServer } from "http";
-import { Server } from "socket.io";
+import {createServer} from "http";
+import {Server} from "socket.io";
 import GameController from './GameController';
 
 //dont like this implementation, need to think of something better
@@ -81,17 +81,26 @@ io.on("connection", (socket) => {
 	});
 
 	socket.on("create_room", (data) => {
-		socket.join(data.room);
+		socket.join(data.name);
 		socket.leave("lobby");
-		io.to(socket.id).emit("create_join_room", data.room);
+		io.to(socket.id).emit("create_join_room", data.name);
 
-		const game = new GameController(data.room, [{ [socket.id]: { name: data.name, score: 0 } }], socket);
-		GameRoomState[data.room] = game;
+    GameRoomState[data.name] = new GameController(
+      data.name,
+      [{[socket.id]: {name: data.name, score: 0}}],
+      socket,
+      data.roundTimer,
+      data.numberOfRounds,
+      data.maxNumberOfPlayers,
+      data.maxHintsGiven,
+      data.hintEnabledAfter,
+      data.words.split(',').map((word: string) => word.trim())
+    );
 
-    console.log(`room created: ${data.room}`);
+    console.log(`room created: ${data.name}`);
 
     io.emit('room_update', Object.keys(GameRoomState));
-    io.to(socket.id).emit('players_in_room', GameRoomState[data.room].players);
+    io.to(socket.id).emit('players_in_room', GameRoomState[data.name].players);
 	});
 
 	socket.on("join_room", (data) => {

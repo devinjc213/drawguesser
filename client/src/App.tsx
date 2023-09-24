@@ -75,7 +75,6 @@ const App: Component = () => {
               {`${room()} - Round ${currentRound()}`}
             </div>
             <div>{roundStarted() ? currentRoundTime() : currentIntermissionTimer()}</div>
-
           </div>
           <div class={styles.gameBody}> 
             <div class={styles.leftColumn}>
