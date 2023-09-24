@@ -1,0 +1,70 @@
+.gameControlWrapper {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  background: #4D8076;
+  border-radius: 8px;
+  height: 50%;
+  padding: 0.5rem 0;
+  padding: 1rem;
+  min-width: 120px;
+  gap: 1.75rem;
+}
+
+.soundWrapper {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  background: #FAEAFF;
+  cursor: pointer;
+}
+
+.noSign {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+}
+
+.divBtn {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 8px;
+  max-width: 2.5rem;
+  padding: 1rem 1.5rem;
+  cursor: pointer;
+  color: #FAEAFF;
+}
+
+.readyBtn {
+  background: #65BAA9;
+}
+
+.unreadyBtn {
+  background: #5E0000;
+}
+
+.disabledBtn {
+  background: #B0A8B9;
+  opacity: 0.7;
+  cursor: default;
+}
+
+.bottomControls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+}
+
+.hintControl {
+  margin-bottom: 4rem;
+  cursor: pointer;
+}

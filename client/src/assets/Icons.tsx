@@ -4,6 +4,10 @@ import Hint from './help-hint.svg';
 import TrashCan from './Trash_Can.svg';
 import PaintBrush from './paint-brush.svg';
 import LeaveRoom from './leave-room.svg';
+import GreenCheck from './Green_check.svg';
+import Sound from './Sound-icon.svg';
+import NoSign from './No_sign.svg';
+import Pencil from './Pencil.svg';
 
 export const Icons = {
   Eraser,
@@ -11,5 +15,10 @@ export const Icons = {
   Hint,
   TrashCan,
   PaintBrush,
-  LeaveRoom
+  LeaveRoom,
+  GreenCheck,
+  Sound,
+  NoSign,
+  Pencil
 }
+

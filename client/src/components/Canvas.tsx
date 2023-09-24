@@ -1,9 +1,11 @@
 import type { Component } from "solid-js";
-import {createSignal, onCleanup, onMount} from "solid-js";
+import {createSignal, onCleanup, onMount, Show} from "solid-js";
 import type { Socket } from "socket.io-client";
 import { Icons } from '../assets/Icons';
 import styles from './Canvas.module.css';
 import ticking from '../assets/sounds/ticking.wav';
+import ChooseWordOverlay from "./ChooseWordOverlay";
+import Hint from './Hint';
 
 type Pos = {
   x: number
@@ -17,10 +19,17 @@ type RGB = {
   a: number
 }
 
-const Canvas: Component<{ socket: Socket, isDrawer: boolean }> = (props) => {
+const Canvas: Component<{
+  socket: Socket,
+  room: string,
+  isDrawer: boolean,
+  selectedWord: string,
+  isRoundStarted: boolean
+}> = (props) => {
   const [paintTool, setPaintTool] = createSignal<"brush" | "bucket">("brush");
 	const [drawColor, setDrawColor] = createSignal<string>("#000000");
 	const [brushSize, setBrushSize] = createSignal<number>(5);
+  const [drawWords, setDrawWords] = createSignal<string[]>([]);
 	const [pos, setPos] = createSignal<{ x: number, y: number}>({x:0,y:0});
 	let rect: any;
 	let canvas: any;
@@ -75,7 +84,12 @@ const Canvas: Component<{ socket: Socket, isDrawer: boolean }> = (props) => {
   }
 
 	const draw = (e: any) => {
-		if (e.buttons !== 1 || paintTool() === "bucket" || outOfBounds(pos().x, pos().y)) return;
+		if (e.buttons !== 1
+          || paintTool() === "bucket"
+          || outOfBounds(pos().x, pos().y)
+          || !props.isDrawer
+          || !props.isRoundStarted
+        ) return;
 		ctx.beginPath();
     tick.play();
 
@@ -108,8 +122,11 @@ const Canvas: Component<{ socket: Socket, isDrawer: boolean }> = (props) => {
     };
   }
 
-  const colorMatch = (a: RGB, b: RGB) =>
-    a.r === b.r && a.g === b.g && a.b === b.b && a.a === b.a;
+  const colorMatch = (color1: RGB, color2: RGB, tolerance: number) => {
+    return Math.abs(color1.r - color2.r) <= tolerance &&
+      Math.abs(color1.g - color2.g) <= tolerance &&
+      Math.abs(color1.b - color2.b) <= tolerance;
+  }
 
   const getColorAtPos = (imageData: any, x: number, y: number) => {
     const {width, data} = imageData;
@@ -141,16 +158,16 @@ const Canvas: Component<{ socket: Socket, isDrawer: boolean }> = (props) => {
       let continueLeft = false;
       let continueRight = false;
 
-      while (continueUp && pixel.y >= 0) {
+      while (continueUp && pixel.y > 0) {
         pixel.y--;
-        continueUp = colorMatch(getColorAtPos(imageData, pixel.x, pixel.y), clickedColor);
+        continueUp = colorMatch(getColorAtPos(imageData, pixel.x, pixel.y), clickedColor, 200);
       }
 
-      while (continueDown && pixel.y < canvas.height) {
+      while (continueDown && pixel.y < canvas.height  - 1) {
         setColorAtPos(imageData, bucketColor, pixel.x, pixel.y);
 
         if (pixel.x - 1 >= 0 && 
-            colorMatch(getColorAtPos(imageData, pixel.x - 1, pixel.y), clickedColor)) {
+            colorMatch(getColorAtPos(imageData, pixel.x - 1, pixel.y), clickedColor, 200)) {
           if (!continueLeft) {
             continueLeft = true;
             stack.push({ x: pixel.x - 1, y: pixel.y });
@@ -160,7 +177,7 @@ const Canvas: Component<{ socket: Socket, isDrawer: boolean }> = (props) => {
         }
 
         if (pixel.x + 1 < canvas.width &&
-            colorMatch(getColorAtPos(imageData, pixel.x + 1, pixel.y), clickedColor)) {
+            colorMatch(getColorAtPos(imageData, pixel.x + 1, pixel.y), clickedColor, 200)) {
           if (!continueRight) {
             stack.push({ x: pixel.x + 1, y: pixel.y });
             continueRight = true;
@@ -170,7 +187,7 @@ const Canvas: Component<{ socket: Socket, isDrawer: boolean }> = (props) => {
         }
 
         pixel.y++
-          continueDown = colorMatch(getColorAtPos(imageData, pixel.x, pixel.y), clickedColor);
+          continueDown = colorMatch(getColorAtPos(imageData, pixel.x, pixel.y), clickedColor, 200);
       }
     }  
     
@@ -178,14 +195,14 @@ const Canvas: Component<{ socket: Socket, isDrawer: boolean }> = (props) => {
   }
 
   const bucket = (e: any) => {
-    if (paintTool() !== "bucket") return;
+    if (paintTool() !== "bucket" || !props.isDrawer) return;
     imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     handlePos(e);
     const clickedColor = getColorAtPos(imageData, pos().x, pos().y);
     const bucketColor = hexToRgb(drawColor());
     const stack: Pos[] = [];
 
-    if (colorMatch(clickedColor, bucketColor) || outOfBounds(pos().x, pos().y)) return;
+    if (colorMatch(clickedColor, bucketColor, 200) || outOfBounds(pos().x, pos().y)) return;
 
     stack.push({ x: pos().x, y: pos().y });
     props.socket.emit('canvas_emit', {
@@ -239,18 +256,36 @@ const Canvas: Component<{ socket: Socket, isDrawer: boolean }> = (props) => {
     lastY = 0;
   });
 
-	props.socket.on('clear_canvas', (data) => {
-    if (data.id !== props.socket.id) handleClear();
+	props.socket.on('clear_canvas', () => {
+    handleClear();
   });
+
+  props.socket.on('draw_words', words => {
+    setDrawWords(words);
+  });
+
+  props.socket.on('round_end', () => {
+    setDrawWords([]);
+  })
 
 	return (
 		<div class={styles.canvasContainer}>
       <div class={styles.canvasWrapper}>
-        <canvas ref={canvas} width="650" height="500"></canvas>
+        <div class={styles.hintContainer}>
+          <Hint socket={props.socket} />
+        </div>
+        <canvas ref={canvas} width="720" height="500"></canvas>
+        <Show when={!props.selectedWord && drawWords().length > 0} keyed>
+          <ChooseWordOverlay socket={props.socket} room={props.room} words={drawWords()} />
+        </Show>
+        <Show when={props.selectedWord} keyed>
+          <div class={styles.wordOverlay}>Your word: {props.selectedWord}</div>
+        </Show>
       </div>
-			<div class={styles.controls}>
-        <div class={styles.brushSizeContainer}>
-          <div style={{
+      <Show when={props.isDrawer} keyed>
+        <div class={styles.controls}>
+          <div class={styles.brushSizeContainer}>
+            <div style={{
               width: `${brushSize()}px`,
               height: `${brushSize()}px`,
               'border-radius': "50%",
@@ -259,65 +294,66 @@ const Canvas: Component<{ socket: Socket, isDrawer: boolean }> = (props) => {
               top: "40%",
               left: "50%",
               transform: "translate(-50%, -50%)"
-            }}></div>
-          <input type="range" min="1" max="50" step="1" value={brushSize()} oninput={(e) => handleBrushSize(e)} />
-        </div>
-        <div class={styles.paintTools}>            
-          <img
-            src={Icons.PaintBrush}
-            class={paintTool() === "brush" ? styles.activeToolLeft : ""}
-            height="26"
-            width="26"
-            alt="Eraser"
-            onClick={() => setPaintTool("brush")}
-          />
-          <img
-            src={Icons.PaintBucket}
-            class={paintTool() === "bucket" ? styles.activeToolRight : ""}
-            height="26"
-            width="26"
-            alt="Clear canvas"
-            onClick={() => setPaintTool("bucket")}
-          />
-        </div>
-				<div class={styles.colorContainer}>
-					<div class={styles.colorRow}>
-						<div class={styles.colorSquare} style={{background: "#000"}} onclick={() => setDrawColor("#000")} />
-						<div class={styles.colorSquare} style={{background: "#545454"}} onclick={() => setDrawColor("#545454")} />
-						<div class={styles.colorSquare} style={{background: "#804000"}} onclick={() => setDrawColor("#804000")} />
-						<div class={styles.colorSquare} style={{background: "#FE0000"}} onclick={() => setDrawColor("#FE0000")} />
-						<div class={styles.colorSquare} style={{background: "#FE6A00"}} onclick={() => setDrawColor("#FE6A00")} />
-						<div class={styles.colorSquare} style={{background: "#FFD800"}} onclick={() => setDrawColor("#FFD800")} />
-						<div class={styles.colorSquare} style={{background: "#00FE20"}} onclick={() => setDrawColor("#00FE20")} />
-						<div class={styles.colorSquare} style={{background: "#0094FE"}} onclick={() => setDrawColor("#0094FE")} />
-						<div class={styles.colorSquare} style={{background: "#0026FF"}} onclick={() => setDrawColor("#0026FF")} />
-						<div class={styles.colorSquare} style={{background: "#B100FE"}} onclick={() => setDrawColor("#B100FE")} />
-					</div>
-          <div class={styles.colorRow}>
-            <div class={styles.colorSquare} style={{background: "#fff"}} onclick={() => setDrawColor("#fff")} />
-            <div class={styles.colorSquare} style={{background: "#A8A8A8"}} onclick={() => setDrawColor("#A8A8A8")} />
-            <div class={styles.colorSquare} style={{background: "#401F00"}} onclick={() => setDrawColor("#401F00")} />
-            <div class={styles.colorSquare} style={{background: "#800001"}} onclick={() => setDrawColor("#800001")} />
-            <div class={styles.colorSquare} style={{background: "#803400"}} onclick={() => setDrawColor("#803400")} />
-            <div class={styles.colorSquare} style={{background: "#806B00"}} onclick={() => setDrawColor("#806B00")} />
-            <div class={styles.colorSquare} style={{background: "#007F0E"}} onclick={() => setDrawColor("#007F0E")} />
-            <div class={styles.colorSquare} style={{background: "#00497E"}} onclick={() => setDrawColor("#00497E")} />
-            <div class={styles.colorSquare} style={{background: "#001280"}} onclick={() => setDrawColor("#001280")} />
-            <div class={styles.colorSquare} style={{background: "#590080"}} onclick={() => setDrawColor("#590080")} />
+              }}></div>
+            <input type="range" min="1" max="50" step="1" value={brushSize()} oninput={(e) => handleBrushSize(e)} />
           </div>
-				</div>
-        <img
-          src={Icons.TrashCan}
-          height="48"
-          width="48"
-          style={{ cursor: "pointer" }}
-          onClick={() => {
-            handleClear();
-            props.socket.emit("clear_canvas", true);
-          }}
-          alt="Clear canvas"
-        />
-			</div> 
+          <div class={styles.paintTools}>
+            <img
+              src={Icons.PaintBrush}
+              class={paintTool() === "brush" ? styles.activeToolLeft : ""}
+              height="26"
+              width="26"
+              alt="Eraser"
+              onClick={() => setPaintTool("brush")}
+            />
+            <img
+              src={Icons.PaintBucket}
+              class={paintTool() === "bucket" ? styles.activeToolRight : ""}
+              height="26"
+              width="26"
+              alt="Clear canvas"
+              onClick={() => setPaintTool("bucket")}
+            />
+          </div>
+          <div class={styles.colorContainer}>
+            <div class={styles.colorRow}>
+              <div class={styles.colorSquare} style={{background: "#000"}} onclick={() => setDrawColor("#000")} />
+              <div class={styles.colorSquare} style={{background: "#545454"}} onclick={() => setDrawColor("#545454")} />
+              <div class={styles.colorSquare} style={{background: "#804000"}} onclick={() => setDrawColor("#804000")} />
+              <div class={styles.colorSquare} style={{background: "#FE0000"}} onclick={() => setDrawColor("#FE0000")} />
+              <div class={styles.colorSquare} style={{background: "#FE6A00"}} onclick={() => setDrawColor("#FE6A00")} />
+              <div class={styles.colorSquare} style={{background: "#FFD800"}} onclick={() => setDrawColor("#FFD800")} />
+              <div class={styles.colorSquare} style={{background: "#00FE20"}} onclick={() => setDrawColor("#00FE20")} />
+              <div class={styles.colorSquare} style={{background: "#0094FE"}} onclick={() => setDrawColor("#0094FE")} />
+              <div class={styles.colorSquare} style={{background: "#0026FF"}} onclick={() => setDrawColor("#0026FF")} />
+              <div class={styles.colorSquare} style={{background: "#B100FE"}} onclick={() => setDrawColor("#B100FE")} />
+            </div>
+            <div class={styles.colorRow}>
+              <div class={styles.colorSquare} style={{background: "#fff"}} onclick={() => setDrawColor("#fff")} />
+              <div class={styles.colorSquare} style={{background: "#A8A8A8"}} onclick={() => setDrawColor("#A8A8A8")} />
+              <div class={styles.colorSquare} style={{background: "#401F00"}} onclick={() => setDrawColor("#401F00")} />
+              <div class={styles.colorSquare} style={{background: "#800001"}} onclick={() => setDrawColor("#800001")} />
+              <div class={styles.colorSquare} style={{background: "#803400"}} onclick={() => setDrawColor("#803400")} />
+              <div class={styles.colorSquare} style={{background: "#806B00"}} onclick={() => setDrawColor("#806B00")} />
+              <div class={styles.colorSquare} style={{background: "#007F0E"}} onclick={() => setDrawColor("#007F0E")} />
+              <div class={styles.colorSquare} style={{background: "#00497E"}} onclick={() => setDrawColor("#00497E")} />
+              <div class={styles.colorSquare} style={{background: "#001280"}} onclick={() => setDrawColor("#001280")} />
+              <div class={styles.colorSquare} style={{background: "#590080"}} onclick={() => setDrawColor("#590080")} />
+            </div>
+          </div>
+          <img
+            src={Icons.TrashCan}
+            height="48"
+            width="48"
+            style={{ cursor: "pointer" }}
+            onClick={() => {
+              handleClear();
+              props.socket.emit("clear_canvas", true);
+            }}
+            alt="Clear canvas"
+          />
+        </div>
+      </Show>
 		</div>
 	);
 }

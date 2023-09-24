@@ -2,82 +2,17 @@
   display: flex;
 	justify-content: center;
 	align-items: center;
-	height: 100vh;
-  background-image: linear-gradient(206.02deg, #200869,
-    rgba(34, 14, 107, 0.921875), rgba(29, 15, 84, 0.942214) 46.79%, #101113 89.1%);
-}
-
-.playersWrapper {
-  background: #4D8076;
-  padding: 0.5rem;
-  border-radius: 8px;
-}
-
-.playersInRoom {
-  display: flex;
-  flex-direction: column;
-  width: 90px;
-  height: 330px;
-  background: #FFFFFF;
-  border-radius: 8px;
-}
-
-.playerNameWrapper {
-  padding: 0.25rem;
-}
-
-.chatMsg {
-	display: flex;
-}
-
-.chatMsg > span {
-	font-weight: 700;
-	margin-right: 0.25rem;
-}
-
-.chat {
-	padding: 1rem;
-	background: #FFFFFF;
-	border-radius: 8px;
-  width: 220px;
-  height: 540px;
-}
-
-.sendMsgWrapper {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 0.5rem;
-}
-
-.textInput {
-	width: 180px;
-  height: 1.5rem;
-	border: 2px solid black;
-	outline: none;
-	border: none;
-  border-radius: 8px;
-  background: #FFFFFF;
-}
-
-.sendBtn {
-  cursor: pointer;
-  background: #65BAA9;
-  color: 200869;
-  border-radius: 8px;
-  padding: 0.25rem 0.5rem;
-}
-
-.chatWrapper {
-  background: #4d8076;
-  padding: 0.5rem;
-  border-radius: 8px;
+  margin: 0 auto;
+  max-width: 1280px;
+  width: 100%;
+  height: 100vh;
 }
 
 .gameContainer {
 	display: flex;
+  position: relative;
   flex-direction: column;
-	max-width: 1280px;
+  width: 100%;
   max-height: 700px;
 	background: #564472;
   padding: 0.25rem 1rem;
@@ -87,6 +22,14 @@
   box-shadow: 10px 10px 36px -3px rgba(0,0,0,0.75);
 }
 
+.hintContainer {
+  position: absolute;
+  right: 1.8rem;
+  top: 4.5rem;
+  cursor: pointer;
+  z-index: 5;
+  user-select: none;
+}
 
 .topBar {
   display: flex;
@@ -94,33 +37,25 @@
   color: white;
   font-size: 1.5rem;
   width: 100%;
-  margin-bottom: 0.5rem;
 }
 
 .gameBody {
   display: flex;
   gap: 1rem;
   align-items: center;
-  height: 100%;
+  height: 650px;
+  padding: 1rem 0;
 }
 
 .leftColumn {
   display: flex;
   flex-direction: column;
   align-items: center;
-  height: 623px;
+  height: 100%;
   justify-content: space-between;
+  width: 15%;
+  gap: 0.5rem;
 }
 
-.gameControlWrapper {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  align-items: center;
-  background: #4D8076;
-  border-radius: 8px;
-  height: 100%;
-  width: 100%;
-  margin-top: 0.5rem;
-  padding: 0.5rem 0;
-}
+
+
