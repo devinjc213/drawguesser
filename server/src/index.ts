@@ -31,6 +31,8 @@ export const io = new Server(httpServer, {
 	}
 });
 
+console.log('server starting');
+
 let GameRoomState: GameRoomType = {};
 
 setInterval(() => {
