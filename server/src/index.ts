@@ -99,6 +99,10 @@ io.on("connection", (socket) => {
 
   socket.on('selected_word', data => {
     GameRoomState[data.room].setSelectedWord(data.word);
+  });
+
+  socket.on('give_hint', data => {
+    GameRoomState[data.room].handleHint();
   })
 
   socket.on('leave_room', data => {

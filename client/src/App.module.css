@@ -10,6 +10,7 @@
 
 .gameContainer {
 	display: flex;
+  position: relative;
   flex-direction: column;
   width: 100%;
   max-height: 700px;
@@ -21,6 +22,14 @@
   box-shadow: 10px 10px 36px -3px rgba(0,0,0,0.75);
 }
 
+.hintContainer {
+  position: absolute;
+  right: 1.8rem;
+  top: 4.5rem;
+  cursor: pointer;
+  z-index: 5;
+  user-select: none;
+}
 
 .topBar {
   display: flex;
@@ -28,7 +37,6 @@
   color: white;
   font-size: 1.5rem;
   width: 100%;
-  margin-bottom: 0.5rem;
 }
 
 .gameBody {

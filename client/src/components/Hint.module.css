@@ -1,0 +1,38 @@
+.hint {
+    font-size: 1.25rem;
+    margin: 0 0.25rem;
+    padding-left: 0.05rem;
+}
+
+.preText {
+    font-size: 1.25rem;
+    padding-right: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+}
+
+.hint:after {
+    content: "";
+    display: block;
+    width: 0.75rem;
+    border-bottom: solid;
+    margin: 0.25rem;
+}
+
+.underline {
+    margin: 0 0.25rem;
+}
+
+.underline:after {
+    content: "";
+    display: block;
+    width: 0.75rem;
+    border-bottom: solid;
+    margin: 0.25rem;
+}

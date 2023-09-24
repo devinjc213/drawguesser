@@ -7,6 +7,7 @@ import Canvas from './components/Canvas';
 import Chat from './components/Chat';
 import GameControls from './components/GameControls';
 import PlayerList from './components/PlayerList';
+import { Icons } from './assets/Icons';
 
 import styles from './App.module.css';
 
@@ -39,7 +40,7 @@ const App: Component = () => {
 	socket.on('create_join_room', room => setRoom(room));
  
 	socket.on('round_start', () => setRoundStarted(true));
-	
+	 
 	socket.on('round_timer', (timer: number) => setCurrentRoundTime(timer));
 
   socket.on('intermission_timer', (timer: number) => {
@@ -74,8 +75,17 @@ const App: Component = () => {
               {`${room()} - Round ${currentRound()}`}
             </div>
             <div>{roundStarted() ? currentRoundTime() : currentIntermissionTimer()}</div>
-            <div>
-              Hint
+            <div class={styles.hintContainer}>
+              <img
+                src={Icons.Hint}
+                alt="hint"
+                height="35"
+                width="35"
+                onClick={() => {
+                  if (socket.id === Object.keys(drawer())[0])
+                    socket.emit('give_hint', { room: room() });  
+                }}
+              />
             </div>
           </div>
           <div class={styles.gameBody}> 
