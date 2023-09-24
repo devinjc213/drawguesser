@@ -21,6 +21,7 @@ export default class GameController {
 	private numberOfRounds: number;
 	private readonly words: string[];
   private wordsToDraw: string[];
+  private usedWordIndexes: number[];
   private selectedWord: string;
   private playersGuessedCorrect: User[];
 	private interval: any;
@@ -32,23 +33,30 @@ export default class GameController {
     room: string,
     players: User[],
     socket: Socket,
+    roundTimer: number,
+    numberOfRounds: number,
+    maxNumberOfPlayers: number,
+    maxHintsGiven: number,
+    hintEnabledAfter: number,
+    words: string[]
   ) {
     /*
       Room variables
      */
-		this.roundTimer = 80;
-    this.numberOfRounds = 3;
-		this.chooseDrawWordTimer= 15;
-    this.maxNumberOfPlayers = 8;
-    this.maxHintsGiven = 10;
-    this.roundStartTime = 5;
-    this.hintEnabledAfter = 30;
-    this.words = JSON.parse(fs.readFileSync(__dirname + '/1000_words.json', 'utf8'));
+    this.room = room;
+		this.roundTimer = roundTimer;
+    this.numberOfRounds = numberOfRounds;
+    this.maxNumberOfPlayers = maxNumberOfPlayers
+    this.maxHintsGiven = maxHintsGiven;
+    this.hintEnabledAfter = hintEnabledAfter;
+    this.words = JSON.parse(fs.readFileSync(__dirname + '/1000_words.json', 'utf8')).concat(words);
+
+    console.log(words);
+    console.log(this.words);
 
     /*
       System variables
      */
-    this.room = room;
     this.players = players;
     this.socket = socket;
     this.drawer = players[0];
@@ -58,9 +66,12 @@ export default class GameController {
     this.hintsGiven = 0;
     this.hintIndexes = [];
     this.currentRoundTimer = this.roundTimer;
+    this.chooseDrawWordTimer= 15;
+    this.roundStartTime = 5;
     this.currentChooseDrawWordTimer = this.chooseDrawWordTimer;
     this.currentRoundStartTime = this.roundStartTime;
     this.wordsToDraw = [];
+    this.usedWordIndexes = [];
     this.selectedWord = "";
     this.playersGuessedCorrect = [];
     this.interval = null;
@@ -143,6 +154,7 @@ export default class GameController {
     if (usedIndexes.includes(randomIndex)) {
       return this.getRandomUniqueIndex(arr, usedIndexes);
     } else {
+      usedIndexes.push(randomIndex);
       return randomIndex;
     }
   }
@@ -257,7 +269,9 @@ export default class GameController {
   //word twice
   sendWordsToDrawer() {
     while (this.wordsToDraw.length < 4) {
-      this.wordsToDraw.push(this.words[Math.floor(Math.random() * this.words.length - 1)])
+      const randomIndex = this.getRandomUniqueIndex(this.words, this.usedWordIndexes);
+      this.wordsToDraw.push(this.words[randomIndex]);
+      this.usedWordIndexes.push(randomIndex);
     }
 
     const drawerId = this.drawer && Object.keys(this.drawer)[0];

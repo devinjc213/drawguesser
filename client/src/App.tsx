@@ -11,7 +11,7 @@ import { Icons } from './assets/Icons';
 
 import styles from './App.module.css';
 
-const socket = io("http://localhost:4000"); 
+const socket = io("https://drawguesser-production.up.railway.app:4000");
 
 export type User = {
   [key: string]: {
@@ -75,7 +75,6 @@ const App: Component = () => {
               {`${room()} - Round ${currentRound()}`}
             </div>
             <div>{roundStarted() ? currentRoundTime() : currentIntermissionTimer()}</div>
-
           </div>
           <div class={styles.gameBody}> 
             <div class={styles.leftColumn}>
