@@ -27,7 +27,8 @@ const httpServer = createServer();
 
 export const io = new Server(httpServer, {
 	cors: {
-		origin: "*"
+		origin: "https://drawguesser.vercel.app/",
+    methods: "GET,POST"
 	}
 });
 
