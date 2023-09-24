@@ -33,7 +33,7 @@ const App: Component = () => {
 	const [currentRoundTime, setCurrentRoundTime] = createSignal<number>(45);
   const [currentIntermissionTimer, setCurrentIntermissionTimer] =
     createSignal<number>();
-  const [initialRooms, setInitialRooms] = createSignal<string[]>();
+  const [initialRooms, setInitialRooms] = createSignal<string[]>([]);
 
   onCleanup(() => socket.disconnect());
 		
@@ -65,28 +65,17 @@ const App: Component = () => {
 
   return (
     <div class={styles.App}>
-			<Show when={(room() === "lobby" && name())}>
+			<Show when={(room() === "lobby" && name())} keyed>
 				<RoomBrowser getRoom={setRoom} socket={socket} name={name()} initialRooms={initialRooms()}/>
 			</Show>
-			<Show when={room() !== "lobby"}> 
+			<Show when={room() !== "lobby"} keyed>
 				<div class={styles.gameContainer}>
           <div class={styles.topBar}>
             <div>
               {`${room()} - Round ${currentRound()}`}
             </div>
             <div>{roundStarted() ? currentRoundTime() : currentIntermissionTimer()}</div>
-            <div class={styles.hintContainer}>
-              <img
-                src={Icons.Hint}
-                alt="hint"
-                height="35"
-                width="35"
-                onClick={() => {
-                  if (socket.id === Object.keys(drawer())[0])
-                    socket.emit('give_hint', { room: room() });  
-                }}
-              />
-            </div>
+
           </div>
           <div class={styles.gameBody}> 
             <div class={styles.leftColumn}>
@@ -118,7 +107,7 @@ const App: Component = () => {
           </div>
 				</div>
 			</Show>	
-			<Show when={!name()}>
+			<Show when={!name()} keyed>
 				<NameModal getName={setName} />
 			</Show>
     </div>

@@ -17,6 +17,7 @@ const GameControls: Component<{
   const [ready, setReady] = createSignal<boolean>(false);
   const [canStart, setCanStart] = createSignal<boolean>(false);
   const [mute, setMute] = createSignal<boolean>(false);
+  const [hintEnabled, setHintEnabled] = createSignal<boolean>(false);
 
   const handleReady = () => {
     setReady(ready => !ready);
@@ -39,9 +40,25 @@ const GameControls: Component<{
 
   props.socket.on('can_start', canStart => setCanStart(canStart));
 
+  props.socket.on('hint_enabled', () => setHintEnabled(true));
+
   return ( 
     <div class={styles.gameControlWrapper}>
-      <Show when={!props.gameStarted}>
+      <Show when={props.socket.id === Object.keys(props.drawer)[0] && props.gameStarted && hintEnabled()} keyed>
+        <div class={styles.hintControl}>
+          <img
+            src={Icons.Hint}
+            alt="hint"
+            height="60"
+            width="60"
+            onClick={() => {
+              if (props.socket.id === Object.keys(props.drawer)[0])
+                props.socket.emit('give_hint', { room: props.room });
+            }}
+          />
+        </div>
+      </Show>
+      <Show when={!props.gameStarted} keyed>
         <div
           class={ready() ?
             `${styles.divBtn} ${styles.unreadyBtn}`
@@ -54,7 +71,7 @@ const GameControls: Component<{
             when={props.name
                   && !props.roundStarted
                   && Object.keys(props.drawer)[0] === props.socket.id}
-          >
+           keyed>
             <div
               class={canStart()
                 ? `${styles.divBtn} ${styles.readyBtn}`
@@ -76,7 +93,7 @@ const GameControls: Component<{
             width="36"
             onClick={() => setMute(true)}
           />
-          <Show when={mute()}>
+          <Show when={mute()} keyed>
             <img
               src={Icons.NoSign}
               class={styles.noSign}

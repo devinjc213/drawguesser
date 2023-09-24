@@ -15,42 +15,53 @@ export default class GameController {
 	private currentRoundTimer: number;
 	private readonly chooseDrawWordTimer: number;
 	private currentChooseDrawWordTimer: number;
-  private roundStartTime: number;
+  private readonly roundStartTime: number;
   private currentRoundStartTime: number;
 	private numberOfRounds: number;
-	private words: string[];
+	private readonly words: string[];
   private wordsToDraw: string[];
   private selectedWord: string;
   private playersGuessedCorrect: User[];
 	private interval: any;
   private hintsGiven: number;
-  private maxHintsGiven: number;
+  private readonly maxHintsGiven: number;
   private hintIndexes: number[];
 
-	constructor(room: string, players: User[], socket: Socket) {
-		this.room = room;
-		this.players = players;
-		this.socket = socket;
-		this.maxNumberOfPlayers = 8;
-		this.drawer = players[0];
-    this.gameIsStarted = false;
-		this.roundIsStarted = false;
-		this.currentRound = 1;
+	constructor(
+    room: string,
+    players: User[],
+    socket: Socket,
+  ) {
+    /*
+      Room variables
+     */
 		this.roundTimer = 80;
-		this.currentRoundTimer = this.roundTimer;
+    this.numberOfRounds = 3;
 		this.chooseDrawWordTimer= 15;
-		this.currentChooseDrawWordTimer = this.chooseDrawWordTimer;
+    this.maxNumberOfPlayers = 8;
+    this.maxHintsGiven = 10;
     this.roundStartTime = 5;
+    this.words = JSON.parse(fs.readFileSync(__dirname + '/1000_words.json', 'utf8'));
+
+    /*
+      System variables
+     */
+    this.room = room;
+    this.players = players;
+    this.socket = socket;
+    this.drawer = players[0];
+    this.gameIsStarted = false;
+    this.roundIsStarted = false;
+    this.currentRound = 1;
+    this.hintsGiven = 0;
+    this.hintIndexes = [];
+    this.currentRoundTimer = this.roundTimer;
+    this.currentChooseDrawWordTimer = this.chooseDrawWordTimer;
     this.currentRoundStartTime = this.roundStartTime;
-		this.numberOfRounds = 3;
-		this.words = JSON.parse(fs.readFileSync(__dirname + '/1000_words.json', 'utf8')); 
     this.wordsToDraw = [];
     this.selectedWord = "";
     this.playersGuessedCorrect = [];
-		this.interval = null;
-    this.hintsGiven = 0;
-    this.maxHintsGiven = 10;
-    this.hintIndexes = [];
+    this.interval = null;
 
     io.to(this.room).emit('drawer_update', this.drawer);
 	}
@@ -58,6 +69,9 @@ export default class GameController {
   //countdowns for the game round, picking a word to draw, and start countdown 
 	countdown(cdType: "round" | "chooseDrawWord" | "3sec") {	
     if (cdType === "round") {
+      if (this.currentRoundTimer === this.roundTimer - 30) {
+        io.to(this.room).emit('hint_enabled', true);
+      }
       if (this.currentRoundTimer > 0) this.currentRoundTimer -= 1;
       else {
         clearInterval(this.interval);
@@ -303,6 +317,7 @@ export default class GameController {
 
     io.to(this.room).emit('clear_canvas');
     io.to(this.room).emit('clear_pos');
+    io.to(this.room).emit('hint_enabled', false);
 
     this.currentRoundTimer = this.roundTimer;
     this.currentRoundStartTime = this.roundStartTime;

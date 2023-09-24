@@ -63,3 +63,8 @@
   align-items: center;
   gap: 2rem;
 }
+
+.hintControl {
+  margin-bottom: 4rem;
+  cursor: pointer;
+}

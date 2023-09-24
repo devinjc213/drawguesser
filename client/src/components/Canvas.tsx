@@ -197,7 +197,7 @@ const Canvas: Component<{
     const bucketColor = hexToRgb(drawColor());
     const stack: Pos[] = [];
 
-    if (colorMatch(clickedColor, bucketColor) || outOfBounds(pos().x, pos().y)) return;
+    if (colorMatch(clickedColor, bucketColor, 200) || outOfBounds(pos().x, pos().y)) return;
 
     stack.push({ x: pos().x, y: pos().y });
     props.socket.emit('canvas_emit', {
@@ -270,14 +270,14 @@ const Canvas: Component<{
           <Hint socket={props.socket} />
         </div>
         <canvas ref={canvas} width="720" height="500"></canvas>
-        <Show when={!props.selectedWord && drawWords().length > 0}>
+        <Show when={!props.selectedWord && drawWords().length > 0} keyed>
           <ChooseWordOverlay socket={props.socket} room={props.room} words={drawWords()} />
         </Show>
-        <Show when={props.selectedWord}>
+        <Show when={props.selectedWord} keyed>
           <div class={styles.wordOverlay}>Your word: {props.selectedWord}</div>
         </Show>
       </div>
-      <Show when={props.isDrawer}>
+      <Show when={props.isDrawer} keyed>
         <div class={styles.controls}>
           <div class={styles.brushSizeContainer}>
             <div style={{
