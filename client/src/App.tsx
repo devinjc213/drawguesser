@@ -11,9 +11,7 @@ import { Icons } from './assets/Icons';
 
 import styles from './App.module.css';
 
-const socket = io("https://drawguesser-production.up.railway.app", {
-  port: 4000,
-});
+const socket = io("https://drawguesser-production.up.railway.app:4000");
 
 export type User = {
   [key: string]: {

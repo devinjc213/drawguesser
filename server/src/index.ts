@@ -31,6 +31,8 @@ export const io = new Server(httpServer, {
 	}
 });
 
+console.log('server starting');
+
 let GameRoomState: GameRoomType = {};
 
 setInterval(() => {
@@ -45,6 +47,7 @@ setInterval(() => {
 
 io.on("connection", (socket) => {
 	socket.join("lobby");
+  console.log(`user ${socket.id} connected`);
 
 	io.to(socket.id).emit('initial_rooms', Object.keys(GameRoomState));
 
