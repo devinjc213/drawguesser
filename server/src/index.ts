@@ -33,6 +33,16 @@ export const io = new Server(httpServer, {
 
 let GameRoomState: GameRoomType = {};
 
+setInterval(() => {
+  for (const game in GameRoomState) {
+    if (GameRoomState[game].players.length === 0) {
+      delete GameRoomState[game]
+      io.emit('room_update', Object.keys(GameRoomState));
+      console.log(`detected empty room... deleting ${game}`);
+    }
+  }
+}, 1000);
+
 io.on("connection", (socket) => {
 	socket.join("lobby");
 
@@ -77,7 +87,9 @@ io.on("connection", (socket) => {
 
 		const game = new GameController(data.room, [{ [socket.id]: { name: data.name, score: 0 } }], socket);
 		GameRoomState[data.room] = game;
-	
+
+    console.log(`room created: ${data.room}`);
+
     io.emit('room_update', Object.keys(GameRoomState));
     io.to(socket.id).emit('players_in_room', GameRoomState[data.room].players);
 	});
@@ -87,6 +99,7 @@ io.on("connection", (socket) => {
 		socket.leave("lobby");
 		io.to(data.room).emit('user_joined', data.name);
 		GameRoomState[data.room].playerJoined({ [socket.id]: { name: data.name, score: 0 } })
+    console.log(`user ${data.name} joined room: ${data.room}`);
 	});
 
   socket.on('player_ready', data => {
@@ -112,16 +125,9 @@ io.on("connection", (socket) => {
 
   socket.on('disconnecting', () => {
     const room = Array.from(socket.rooms)[1];
-    if (room !== "lobby") GameRoomState[room].playerLeft(socket.id); 
-
-    for (const game in GameRoomState) {
-      if (GameRoomState[game].players.length === 0) {
-        delete GameRoomState[game]
-        io.emit('room_update', Object.keys(GameRoomState));
-      }
-    }
+    if (room !== "lobby") GameRoomState[room].playerLeft(socket.id);
+    console.log(`user ${socket.id} disconnected from room: ${room}`);
   });
-
 });
 
 httpServer.listen(4000);

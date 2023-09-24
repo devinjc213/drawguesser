@@ -8,7 +8,7 @@ export default class GameController {
 	private socket: Socket;
 	private maxNumberOfPlayers: number;
 	private drawer: User;
-  private hintEnabledAfter: number;
+  private readonly hintEnabledAfter: number;
   private gameIsStarted: boolean;
 	private roundIsStarted: boolean;
 	private currentRound: number;
@@ -229,7 +229,12 @@ export default class GameController {
     }
 
     this.players = this.players.filter(player => Object.keys(player)[0] !== id);
-    io.to(this.room).emit('players_in_room', this.players);
+
+    if (this.players.length === 0) {
+      this.gameEnd();
+    } else {
+      io.to(this.room).emit('players_in_room', this.players);
+    }
   }
 
   //handle player ready and emit when all users are ready
@@ -370,6 +375,8 @@ export default class GameController {
 
   gameEnd() {
     io.to(this.room).emit('game_ended');
+    this.interval = null;
+    this.currentRoundTimer = this.roundTimer;
   }
 }
 
