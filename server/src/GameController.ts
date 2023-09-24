@@ -40,9 +40,11 @@ export default class GameController {
     hintEnabledAfter: number,
     words: string[]
   ) {
+    
     /*
       Room variables
      */
+
     this.room = room;
 		this.roundTimer = roundTimer;
     this.numberOfRounds = numberOfRounds;
@@ -51,12 +53,10 @@ export default class GameController {
     this.hintEnabledAfter = hintEnabledAfter;
     this.words = JSON.parse(fs.readFileSync(__dirname + '/1000_words.json', 'utf8')).concat(words);
 
-    console.log(words);
-    console.log(this.words);
-
     /*
       System variables
      */
+
     this.players = players;
     this.socket = socket;
     this.drawer = players[0];
