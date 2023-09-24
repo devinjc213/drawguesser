@@ -4,6 +4,7 @@ import type { Socket } from "socket.io-client";
 import { Icons } from '../assets/Icons';
 import styles from './Canvas.module.css';
 import ChooseWordOverlay from "./ChooseWordOverlay";
+import Hint from './Hint';
 
 type Pos = {
   x: number
@@ -116,8 +117,11 @@ const Canvas: Component<{
     };
   }
 
-  const colorMatch = (a: RGB, b: RGB) =>
-    a.r === b.r && a.g === b.g && a.b === b.b && a.a === b.a;
+  const colorMatch = (color1: RGB, color2: RGB, tolerance: number) => {
+    return Math.abs(color1.r - color2.r) <= tolerance &&
+      Math.abs(color1.g - color2.g) <= tolerance &&
+      Math.abs(color1.b - color2.b) <= tolerance;
+  }
 
   const getColorAtPos = (imageData: any, x: number, y: number) => {
     const {width, data} = imageData;
@@ -149,16 +153,16 @@ const Canvas: Component<{
       let continueLeft = false;
       let continueRight = false;
 
-      while (continueUp && pixel.y >= 0) {
+      while (continueUp && pixel.y > 0) {
         pixel.y--;
-        continueUp = colorMatch(getColorAtPos(imageData, pixel.x, pixel.y), clickedColor);
+        continueUp = colorMatch(getColorAtPos(imageData, pixel.x, pixel.y), clickedColor, 200);
       }
 
-      while (continueDown && pixel.y < canvas.height) {
+      while (continueDown && pixel.y < canvas.height  - 1) {
         setColorAtPos(imageData, bucketColor, pixel.x, pixel.y);
 
         if (pixel.x - 1 >= 0 && 
-            colorMatch(getColorAtPos(imageData, pixel.x - 1, pixel.y), clickedColor)) {
+            colorMatch(getColorAtPos(imageData, pixel.x - 1, pixel.y), clickedColor, 200)) {
           if (!continueLeft) {
             continueLeft = true;
             stack.push({ x: pixel.x - 1, y: pixel.y });
@@ -168,7 +172,7 @@ const Canvas: Component<{
         }
 
         if (pixel.x + 1 < canvas.width &&
-            colorMatch(getColorAtPos(imageData, pixel.x + 1, pixel.y), clickedColor)) {
+            colorMatch(getColorAtPos(imageData, pixel.x + 1, pixel.y), clickedColor, 200)) {
           if (!continueRight) {
             stack.push({ x: pixel.x + 1, y: pixel.y });
             continueRight = true;
@@ -178,7 +182,7 @@ const Canvas: Component<{
         }
 
         pixel.y++
-          continueDown = colorMatch(getColorAtPos(imageData, pixel.x, pixel.y), clickedColor);
+          continueDown = colorMatch(getColorAtPos(imageData, pixel.x, pixel.y), clickedColor, 200);
       }
     }  
     
@@ -193,7 +197,7 @@ const Canvas: Component<{
     const bucketColor = hexToRgb(drawColor());
     const stack: Pos[] = [];
 
-    if (colorMatch(clickedColor, bucketColor) || outOfBounds(pos().x, pos().y)) return;
+    if (colorMatch(clickedColor, bucketColor, 200) || outOfBounds(pos().x, pos().y)) return;
 
     stack.push({ x: pos().x, y: pos().y });
     props.socket.emit('canvas_emit', {
@@ -262,15 +266,18 @@ const Canvas: Component<{
 	return (
 		<div class={styles.canvasContainer}>
       <div class={styles.canvasWrapper}>
+        <div class={styles.hintContainer}>
+          <Hint socket={props.socket} />
+        </div>
         <canvas ref={canvas} width="720" height="500"></canvas>
-        <Show when={!props.selectedWord && drawWords().length > 0}>
+        <Show when={!props.selectedWord && drawWords().length > 0} keyed>
           <ChooseWordOverlay socket={props.socket} room={props.room} words={drawWords()} />
         </Show>
-        <Show when={props.selectedWord}>
+        <Show when={props.selectedWord} keyed>
           <div class={styles.wordOverlay}>Your word: {props.selectedWord}</div>
         </Show>
       </div>
-      <Show when={props.isDrawer}>
+      <Show when={props.isDrawer} keyed>
         <div class={styles.controls}>
           <div class={styles.brushSizeContainer}>
             <div style={{

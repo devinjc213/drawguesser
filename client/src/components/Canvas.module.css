@@ -103,3 +103,8 @@
   font-weight: 700;
   color: #FAEAFF;
 }
+
+.hintContainer {
+  position: absolute;
+  top: -2.5rem;
+}

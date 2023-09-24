@@ -7,6 +7,7 @@ import Canvas from './components/Canvas';
 import Chat from './components/Chat';
 import GameControls from './components/GameControls';
 import PlayerList from './components/PlayerList';
+import { Icons } from './assets/Icons';
 
 import styles from './App.module.css';
 
@@ -32,14 +33,14 @@ const App: Component = () => {
 	const [currentRoundTime, setCurrentRoundTime] = createSignal<number>(45);
   const [currentIntermissionTimer, setCurrentIntermissionTimer] =
     createSignal<number>();
-  const [initialRooms, setInitialRooms] = createSignal<string[]>();
+  const [initialRooms, setInitialRooms] = createSignal<string[]>([]);
 
   onCleanup(() => socket.disconnect());
 		
 	socket.on('create_join_room', room => setRoom(room));
  
 	socket.on('round_start', () => setRoundStarted(true));
-	
+	 
 	socket.on('round_timer', (timer: number) => setCurrentRoundTime(timer));
 
   socket.on('intermission_timer', (timer: number) => {
@@ -64,19 +65,17 @@ const App: Component = () => {
 
   return (
     <div class={styles.App}>
-			<Show when={(room() === "lobby" && name())}>
+			<Show when={(room() === "lobby" && name())} keyed>
 				<RoomBrowser getRoom={setRoom} socket={socket} name={name()} initialRooms={initialRooms()}/>
 			</Show>
-			<Show when={room() !== "lobby"}> 
+			<Show when={room() !== "lobby"} keyed>
 				<div class={styles.gameContainer}>
           <div class={styles.topBar}>
             <div>
               {`${room()} - Round ${currentRound()}`}
             </div>
             <div>{roundStarted() ? currentRoundTime() : currentIntermissionTimer()}</div>
-            <div>
-              Hint
-            </div>
+
           </div>
           <div class={styles.gameBody}> 
             <div class={styles.leftColumn}>
@@ -108,7 +107,7 @@ const App: Component = () => {
           </div>
 				</div>
 			</Show>	
-			<Show when={!name()}>
+			<Show when={!name()} keyed>
 				<NameModal getName={setName} />
 			</Show>
     </div>

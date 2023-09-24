@@ -41,8 +41,6 @@ const Chat: Component<{
 				handleSendMessage();
 			}
 		});
-
-		props.socket.disconnect();
 	});
 
 	const handleSendMessage = () => {
