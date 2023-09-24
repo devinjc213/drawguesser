@@ -12,11 +12,12 @@ const GameControls: Component<{
   name: string,
   gameStarted: boolean,
   roundStarted: boolean,
-  setRoom: Setter<string>
+  setRoom: Setter<string>,
+  setMute: Setter<boolean>,
+  muted: boolean
 }> = (props) => {
   const [ready, setReady] = createSignal<boolean>(false);
   const [canStart, setCanStart] = createSignal<boolean>(false);
-  const [mute, setMute] = createSignal<boolean>(false);
   const [hintEnabled, setHintEnabled] = createSignal<boolean>(false);
 
   const handleReady = () => {
@@ -91,16 +92,16 @@ const GameControls: Component<{
             alt="mute"
             height="36"
             width="36"
-            onClick={() => setMute(true)}
+            onClick={() => props.setMute(true)}
           />
-          <Show when={mute()} keyed>
+          <Show when={props.muted} keyed>
             <img
               src={Icons.NoSign}
               class={styles.noSign}
               height="48"
               width="48"
               alt="unmute" 
-              onClick={() => setMute(false)}
+              onClick={() => props.setMute(false)}
             />
           </Show>
         </div>

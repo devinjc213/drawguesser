@@ -38,16 +38,17 @@ const App: Component = () => {
   const [currentIntermissionTimer, setCurrentIntermissionTimer] =
     createSignal<number>();
   const [initialRooms, setInitialRooms] = createSignal<string[]>([]);
+  const [muted, setMuted] = createSignal<boolean>(false);
 
   onCleanup(() => socket.disconnect());
 
   createEffect(() => {
-    if (currentRoundTime() < 11) {
+    if (currentRoundTime() < 11 && !muted()) {
       const audio = new Audio(tick);
       audio.play();
     }
   });
-		
+
 	socket.on('create_join_room', room => setRoom(room));
  
 	socket.on('round_start', () => setRoundStarted(true));
@@ -75,8 +76,10 @@ const App: Component = () => {
   });
 
   socket.on('player_guessed_word', () => {
-    const audio = new Audio(correctGuess);
-    audio.play();
+    if (!muted()) {
+      const audio = new Audio(correctGuess);
+      audio.play();
+    }
   });
 
   return (
@@ -103,6 +106,8 @@ const App: Component = () => {
                 roundStarted={roundStarted()}
                 setRoom={setRoom}
                 gameStarted={gameStarted()}
+                setMute={setMuted}
+                muted={muted()}
               />
             </div>
             <Chat
