@@ -3,4 +3,4 @@ node_modules
 go-server
 server/dist
 client/dist
-client/.env
+**/.env
