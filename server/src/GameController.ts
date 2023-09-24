@@ -281,9 +281,12 @@ export default class GameController {
   
   setSelectedWord(word: string) {
     this.selectedWord = word;
+
     if (this.drawer) {
       io.to(Object.keys(this.drawer)[0]).emit('selected_word', this.selectedWord);
     }
+
+    this.wordsToDraw = [];
   }
 
   //round where drawer picks from a list of words.
@@ -337,15 +340,13 @@ export default class GameController {
     this.hintsGiven = 0;
     this.hintIndexes = [];
 
-    io.to(this.room).emit('clear_canvas');
-    io.to(this.room).emit('clear_pos');
-    io.to(this.room).emit('hint_enabled', false);
-
     this.currentRoundTimer = this.roundTimer;
     this.currentRoundStartTime = this.roundStartTime;
     this.currentChooseDrawWordTimer = this.chooseDrawWordTimer;
 
-    this.wordsToDraw = [];
+    io.to(this.room).emit('clear_canvas');
+    io.to(this.room).emit('clear_pos');
+    io.to(this.room).emit('hint_enabled', false);
 
     if (drawerLeft) {
       io.to(this.room).emit('server_message', 'The drawer left!  Round ended.');
@@ -369,15 +370,17 @@ export default class GameController {
       const playerIndex = this.players
         .findIndex(player => Object.keys(player)[0] === Object.keys(this.drawer)[0]);
 
-      if (this.drawer === this.players[playerIndex]
-        && playerIndex < this.players.length - 1) {
+      if (playerIndex < this.players.length - 1) {
         this.drawer = this.players[playerIndex + 1];
       } else {
         this.drawer = this.players[0];
+        this.currentRound++;
+
+        if (this.currentRound >= this.numberOfRounds) {
+          this.gameEnd();
+        }
       }
     }
-
-    this.currentRound++;
 
     io.to(this.room).emit('round_end', this.currentRound);
 
@@ -390,6 +393,17 @@ export default class GameController {
 
   gameEnd() {
     io.to(this.room).emit('game_ended');
+    io.to(this.room).emit('final_scores', this.players);
+
+    this.gameIsStarted = false;
+    this.roundIsStarted = false;
+    this.currentRound = 1;
+    this.hintsGiven = 0;
+    this.hintIndexes = [];
+    this.wordsToDraw = [];
+    this.usedWordIndexes = [];
+    this.selectedWord = "";
+    this.playersGuessedCorrect = [];
     this.interval = null;
     this.currentRoundTimer = this.roundTimer;
   }
