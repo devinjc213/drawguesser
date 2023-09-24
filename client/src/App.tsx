@@ -1,4 +1,4 @@
-import { createSignal, Show, onCleanup } from 'solid-js';
+import {createSignal, Show, onCleanup, createEffect} from 'solid-js';
 import type { Component } from 'solid-js';
 import { io } from "socket.io-client";
 import NameModal from './components/NameModal';
@@ -7,13 +7,15 @@ import Canvas from './components/Canvas';
 import Chat from './components/Chat';
 import GameControls from './components/GameControls';
 import PlayerList from './components/PlayerList';
-import { Icons } from './assets/Icons';
-
 import styles from './App.module.css';
+import tick from './assets/sounds/tick.flac';
+import correctGuess from './assets/sounds/correctGuess.mp3';
 
-const socket = io("https://drawguesser-production.up.railway.app", {
-  port: 4000,
-});
+const socket = io(
+  import.meta.env.DEV
+    ? import.meta.env.VITE_DEV_IO_URL
+    : import.meta.env.VITE_PROD_IO_URL
+);
 
 export type User = {
   [key: string]: {
@@ -38,6 +40,13 @@ const App: Component = () => {
   const [initialRooms, setInitialRooms] = createSignal<string[]>([]);
 
   onCleanup(() => socket.disconnect());
+
+  createEffect(() => {
+    if (currentRoundTime() < 11) {
+      const audio = new Audio(tick);
+      audio.play();
+    }
+  });
 		
 	socket.on('create_join_room', room => setRoom(room));
  
@@ -63,6 +72,11 @@ const App: Component = () => {
 
   socket.on('game_is_started', (gameIsStarted) => {
       setGameStarted(gameIsStarted);
+  });
+
+  socket.on('player_guessed_word', () => {
+    const audio = new Audio(correctGuess);
+    audio.play();
   });
 
   return (

@@ -134,6 +134,7 @@ export default class GameController {
 		} else {
 			if (msg === this.selectedWord) {
 				io.to(this.room).emit('server_message', `${name} guessed the word!`);
+        io.to(this.room).emit('player_guessed_word', true);
 
         this.handleScore(socketId, this.currentRoundTimer);
         
