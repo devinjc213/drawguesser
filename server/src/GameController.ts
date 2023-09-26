@@ -196,7 +196,7 @@ export default class GameController {
     
     Object.values(this.players[playerIndex])[0].score += score;
 
-    Object.values(this.players[drawerIndex])[0].score += 10;
+    Object.values(this.players[drawerIndex])[0].score += 6;
 
     io.to(this.room).emit('players_in_room', this.players);
   }
@@ -258,11 +258,15 @@ export default class GameController {
     this.players[playerIndex][id].ready = !this.players[playerIndex][id].ready;
     
     io.to(this.room).emit('players_in_room', this.players);
+
+    console.log('player ready');
     
     if (this.players.findIndex(player => !Object.values(player)[0].ready) === -1) {
-      io.to(Object.keys(this.drawer)[0]).emit('can_start', true);
+      io.to(this.room).emit('can_start', true);
+      console.log('can start');
     } else {
-      io.to(Object.keys(this.drawer)[0]).emit('can_start', false);
+      io.to(this.room).emit('can_start', false);
+      console.log('cant start');
     }
   }
 
@@ -367,17 +371,18 @@ export default class GameController {
     this.playersGuessedCorrect = [];
 
     if (!drawerLeft) {
-      const playerIndex = this.players
+      const drawerIndex = this.players
         .findIndex(player => Object.keys(player)[0] === Object.keys(this.drawer)[0]);
 
-      if (playerIndex < this.players.length - 1) {
-        this.drawer = this.players[playerIndex + 1];
+      if (drawerIndex < this.players.length - 1) {
+        this.drawer = this.players[drawerIndex + 1];
       } else {
         this.drawer = this.players[0];
         this.currentRound++;
 
-        if (this.currentRound >= this.numberOfRounds) {
+        if (this.currentRound > this.numberOfRounds) {
           this.gameEnd();
+          return;
         }
       }
     }
@@ -392,8 +397,16 @@ export default class GameController {
 	}
 
   gameEnd() {
-    io.to(this.room).emit('game_ended');
+    clearInterval(this.interval);
+    this.interval = null;
+
+    io.to(this.room).emit('game_over');
     io.to(this.room).emit('final_scores', this.players);
+    io.to(this.room).emit('clear_canvas');
+    io.to(this.room).emit('clear_pos');
+    io.to(this.room).emit('hint_enabled', false);
+    io.to(this.room).emit('can_start', false);
+    io.to(this.room).emit('game_is_started', false);
 
     this.gameIsStarted = false;
     this.roundIsStarted = false;
@@ -404,8 +417,11 @@ export default class GameController {
     this.usedWordIndexes = [];
     this.selectedWord = "";
     this.playersGuessedCorrect = [];
-    this.interval = null;
     this.currentRoundTimer = this.roundTimer;
+  }
+
+  playAgain() {
+    io.to(this.room).emit('play_again_start');
   }
 }
 

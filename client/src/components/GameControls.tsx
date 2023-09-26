@@ -1,7 +1,7 @@
 import type { Component, Setter } from "solid-js";
 import type { Socket } from "socket.io-client";
 import type { User } from "../App";
-import { createSignal, Show } from "solid-js";
+import {createEffect, createSignal, Show} from "solid-js";
 import { Icons } from "../assets/Icons";
 import styles from "./GameControls.module.css";
 
@@ -39,9 +39,22 @@ const GameControls: Component<{
     props.setRoom("lobby");
   }
 
-  props.socket.on('can_start', canStart => setCanStart(canStart));
+  createEffect(() => {
+    props.socket.on('can_start', canStart => {
+      setCanStart(canStart);
+      console.log(canStart);
+    });
+  });
 
   props.socket.on('hint_enabled', () => setHintEnabled(true));
+
+  props.socket.on('players_in_room', (players: User[]) => {
+    players.map(player => {
+      if (Object.keys(player)[0] === props.socket.id) {
+        setReady(Object.values(player)[0].ready ?? false);
+      }
+    });
+  });
 
   return ( 
     <div class={styles.gameControlWrapper}>

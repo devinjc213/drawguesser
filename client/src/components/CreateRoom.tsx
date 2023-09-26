@@ -5,6 +5,7 @@ import {Socket} from "socket.io-client";
 
 export type RoomSettings = {
   name: string
+  playerName: string
   roundTimer: number
   numberOfRounds: number
   maxNumberOfPlayers: number
@@ -12,9 +13,10 @@ export type RoomSettings = {
   hintEnabledAfter: number
   words: string
 }
-const CreateRoom: Component<{socket: Socket}> = (props) => {
+const CreateRoom: Component<{socket: Socket, playerName: string}> = (props) => {
   const [roomSettings, setRoomSettings] = createSignal<RoomSettings>({
     name: "",
+    playerName: props.playerName,
     roundTimer: 80,
     numberOfRounds: 3,
     maxNumberOfPlayers: 8,
@@ -24,6 +26,7 @@ const CreateRoom: Component<{socket: Socket}> = (props) => {
   });
 
   const handleCreateRoom = () => {
+    console.log(roomSettings());
     props.socket.emit('create_room', roomSettings());
   }
 

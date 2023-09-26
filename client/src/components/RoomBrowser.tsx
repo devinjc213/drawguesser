@@ -5,18 +5,17 @@ import CreateRoom from './CreateRoom';
 import styles from "./RoomBrowser.module.css";
 import type { Socket } from 'socket.io-client';
 
-const RoomBrowser: Component<{getRoom: Setter<string>, socket: Socket , name: string, initialRooms: string[] }> = (props) => {
+const RoomBrowser: Component<{
+	getRoom: Setter<string>,
+	socket: Socket,
+	name: string,
+	playerName: string,
+	initialRooms: string[]
+}> = (props) => {
 	const [selectedRoom, setSelectedRoom] = createSignal<string>("");
 	const [roomList, setRoomList] = createSignal<string[]>(props.initialRooms);
 	const [showCreateModal, setShowCreateModal] = createSignal<boolean>(false);
-	const [createRoomName, setCreateRoomName] = createSignal<string>("");
-
-	createEffect(() => {
-		if (createRoomName()) {
-			setShowCreateModal(false);
-			props.socket.emit('create_room', { room: createRoomName(), name: props.name });
-		}	
-	});
+	console.log(props.playerName);
 
 	props.socket.on('room_update', rooms => {
 		setRoomList(rooms);
@@ -52,7 +51,7 @@ const RoomBrowser: Component<{getRoom: Setter<string>, socket: Socket , name: st
 				</div>
 			</Show>
 			<Show when={showCreateModal()} keyed>
-				<CreateRoom socket={props.socket} />
+				<CreateRoom socket={props.socket} playerName={props.playerName} />
 			</Show>
 		</div>
 	)

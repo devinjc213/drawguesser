@@ -39,6 +39,7 @@ const App: Component = () => {
     createSignal<number>();
   const [initialRooms, setInitialRooms] = createSignal<string[]>([]);
   const [muted, setMuted] = createSignal<boolean>(false);
+  const [isGameOver, setIsGameOver] = createSignal<boolean>(false);
 
   onCleanup(() => socket.disconnect());
 
@@ -75,17 +76,33 @@ const App: Component = () => {
       setGameStarted(gameIsStarted);
   });
 
-  socket.on('player_guessed_word', () => {
-    if (!muted()) {
-      const audio = new Audio(correctGuess);
-      audio.play();
-    }
+  socket.on('game_over', () => {
+    setIsGameOver(true);
+    setCurrentRoundTime(0);
+    setCurrentIntermissionTimer(0);
+    setCurrentRound(1);
+    setSelectedWord("");
+    setRoundStarted(false);
+    setGameStarted(false);
+  });
+
+  socket.on('play_again_start', () => {
+    setIsGameOver(false);
+  });
+
+  createEffect(() => {
+    socket.on('player_guessed_word', () => {
+      if (!muted()) {
+        const audio = new Audio(correctGuess);
+        audio.play();
+      }
+    });
   });
 
   return (
     <div class={styles.App}>
 			<Show when={(room() === "lobby" && name())} keyed>
-				<RoomBrowser getRoom={setRoom} socket={socket} name={name()} initialRooms={initialRooms()}/>
+				<RoomBrowser getRoom={setRoom} playerName={name()} socket={socket} name={name()} initialRooms={initialRooms()}/>
 			</Show>
 			<Show when={room() !== "lobby"} keyed>
 				<div class={styles.gameContainer}>
@@ -123,6 +140,7 @@ const App: Component = () => {
               isDrawer={socket.id === Object.keys(drawer())[0]}
               isRoundStarted={roundStarted()}
               selectedWord={selectedWord()}
+              isGameOver={isGameOver()}
             />
           </div>
 				</div>

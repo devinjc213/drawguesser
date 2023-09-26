@@ -1,10 +1,11 @@
 import type { Component } from "solid-js";
-import {createSignal, onCleanup, onMount, Show} from "solid-js";
+import {createEffect, createSignal, onCleanup, onMount, Show} from "solid-js";
 import type { Socket } from "socket.io-client";
 import { Icons } from '../assets/Icons';
 import styles from './Canvas.module.css';
 import ticking from '../assets/sounds/ticking.wav';
 import ChooseWordOverlay from "./ChooseWordOverlay";
+import GameEndOverlay from "./GameEndOverlay";
 import Hint from './Hint';
 
 type Pos = {
@@ -24,7 +25,8 @@ const Canvas: Component<{
   room: string,
   isDrawer: boolean,
   selectedWord: string,
-  isRoundStarted: boolean
+  isRoundStarted: boolean,
+  isGameOver: boolean
 }> = (props) => {
   const [paintTool, setPaintTool] = createSignal<"brush" | "bucket">("brush");
 	const [drawColor, setDrawColor] = createSignal<string>("#000000");
@@ -268,6 +270,12 @@ const Canvas: Component<{
     setDrawWords([]);
   })
 
+  createEffect(() => {
+    props.socket.on('game_over', () => {
+      setDrawWords([]);
+    });
+  });
+
 	return (
 		<div class={styles.canvasContainer}>
       <div class={styles.canvasWrapper}>
@@ -275,8 +283,11 @@ const Canvas: Component<{
           <Hint socket={props.socket} />
         </div>
         <canvas ref={canvas} width="720" height="500"></canvas>
-        <Show when={!props.selectedWord && drawWords().length > 0} keyed>
+        <Show when={!props.selectedWord && drawWords().length > 0 && !props.isGameOver} keyed>
           <ChooseWordOverlay socket={props.socket} room={props.room} words={drawWords()} />
+        </Show>
+        <Show when={props.isGameOver} keyed>
+          <GameEndOverlay socket={props.socket} room={props.room} />
         </Show>
         <Show when={props.selectedWord} keyed>
           <div class={styles.wordOverlay}>Your word: {props.selectedWord}</div>
