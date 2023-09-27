@@ -29,8 +29,6 @@ const GameEndOverlay: Component<{socket: Socket, room: string}> = (props) => {
         }]);
 
     });
-
-    setWinners(winners().sort((a, b) => b.score - a.score));
   });
 
   const playAgain = () => {

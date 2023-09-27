@@ -85,6 +85,11 @@ export default class GameController {
       if (this.currentRoundTimer === this.roundTimer - this.hintEnabledAfter) {
         io.to(this.room).emit('hint_enabled', true);
       }
+
+      if (this. currentRoundTimer < 11 && this.currentRoundTimer > 0) {
+        io.to(this.room).emit('play_tick', true);
+      }
+
       if (this.currentRoundTimer > 0) this.currentRoundTimer -= 1;
       else {
         clearInterval(this.interval);
@@ -399,6 +404,9 @@ export default class GameController {
   gameEnd() {
     clearInterval(this.interval);
     this.interval = null;
+
+    this.players = this.players
+      .sort((a, b) => Object.values(b)[0].score - Object.values(a)[0].score);
 
     io.to(this.room).emit('game_over');
     io.to(this.room).emit('final_scores', this.players);

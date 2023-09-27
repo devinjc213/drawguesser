@@ -10,6 +10,7 @@ import PlayerList from './components/PlayerList';
 import styles from './App.module.css';
 import tick from './assets/sounds/tick.flac';
 import correctGuess from './assets/sounds/correctGuess.mp3';
+import winner from './assets/sounds/winner.wav';
 
 const socket = io(
   import.meta.env.DEV
@@ -41,19 +42,18 @@ const App: Component = () => {
   const [muted, setMuted] = createSignal<boolean>(false);
   const [isGameOver, setIsGameOver] = createSignal<boolean>(false);
 
+  const sound_tick = new Audio(tick);
+  const sound_guess = new Audio(correctGuess);
+  const sound_game_over = new Audio(winner);
+
   onCleanup(() => socket.disconnect());
 
-  createEffect(() => {
-    if (currentRoundTime() < 11 && !muted()) {
-      const audio = new Audio(tick);
-      audio.play();
-    }
-  });
-
+  socket.on('play_again_start', () => setIsGameOver(false));
+  socket.on('initial_rooms', (rounds) => setInitialRooms(rounds));
+  socket.on('drawer_update', user => setDrawer(user));
+  socket.on('selected_word', word => setSelectedWord(word));
 	socket.on('create_join_room', room => setRoom(room));
- 
 	socket.on('round_start', () => setRoundStarted(true));
-	 
 	socket.on('round_timer', (timer: number) => setCurrentRoundTime(timer));
 
   socket.on('intermission_timer', (timer: number) => {
@@ -66,11 +66,6 @@ const App: Component = () => {
     setSelectedWord("");
   });
 
-  socket.on('initial_rooms', (rounds) => setInitialRooms(rounds));
-
-  socket.on('drawer_update', user => setDrawer(user));
-
-  socket.on('selected_word', word => setSelectedWord(word));
 
   socket.on('game_is_started', (gameIsStarted) => {
       setGameStarted(gameIsStarted);
@@ -84,19 +79,20 @@ const App: Component = () => {
     setSelectedWord("");
     setRoundStarted(false);
     setGameStarted(false);
+
+    if (!muted()) {
+      sound_game_over.play();
+    }
   });
 
-  socket.on('play_again_start', () => {
-    setIsGameOver(false);
+  socket.on('play_tick', () => {
+    if (!muted()) sound_tick.play()
   });
 
-  createEffect(() => {
-    socket.on('player_guessed_word', () => {
-      if (!muted()) {
-        const audio = new Audio(correctGuess);
-        audio.play();
-      }
-    });
+  socket.on('player_guessed_word', () => {
+    if (!muted()) {
+      sound_guess.play();
+    }
   });
 
   return (
