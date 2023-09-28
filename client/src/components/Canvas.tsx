@@ -3,7 +3,6 @@ import {createEffect, createSignal, onCleanup, onMount, Show} from "solid-js";
 import type { Socket } from "socket.io-client";
 import { Icons } from '../assets/Icons';
 import styles from './Canvas.module.css';
-import ticking from '../assets/sounds/ticking.wav';
 import ChooseWordOverlay from "./ChooseWordOverlay";
 import GameEndOverlay from "./GameEndOverlay";
 import Hint from './Hint';
@@ -45,8 +44,6 @@ const Canvas: Component<{
     ctx = canvas.getContext("2d", { willReadFrequently: true });
     ctx.fillStyle = "white";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    tick = new Audio(ticking);
-    tick.loop = true;
 
     document.addEventListener('mousemove', draw);
     document.addEventListener('mousedown', handlePos);
@@ -93,7 +90,6 @@ const Canvas: Component<{
           || !props.isRoundStarted
         ) return;
 		ctx.beginPath();
-    tick.play();
 
 		ctx.lineWidth = brushSize();
 		ctx.lineCap = 'round';
