@@ -1,6 +1,5 @@
 node_modules
 .idea
 go-server
-server/dist
 client/dist
 **/*.env
