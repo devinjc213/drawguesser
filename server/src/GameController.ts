@@ -3,6 +3,7 @@ import type { Socket } from 'socket.io'
 import fs from "fs";
 
 export default class GameController {
+  private roomId: string;
   private room: string;
 	public players: User[];
 	private socket: Socket;
@@ -30,6 +31,7 @@ export default class GameController {
   private hintIndexes: number[];
 
 	constructor(
+    roomId: string,
     room: string,
     players: User[],
     socket: Socket,
@@ -45,6 +47,7 @@ export default class GameController {
       Room variables
      */
 
+    this.roomId = roomId;
     this.room = room;
 		this.roundTimer = roundTimer;
     this.numberOfRounds = numberOfRounds;
@@ -77,6 +80,8 @@ export default class GameController {
     this.interval = null;
 
     io.to(this.room).emit('drawer_update', this.drawer);
+
+    console.log(this.roomId);
 	}
 
   //countdowns for the game round, picking a word to draw, and start countdown 
@@ -132,7 +137,7 @@ export default class GameController {
   //Dont let drawer type, add a correct guess to array, end round if all 
   //users have guessed
 	handleMessage({ socketId, name, msg, room }: MessageType) {
-    if (this.roundIsStarted && socketId === Object.keys(this.drawer)[0]) return;
+    if (this.roundIsStarted && socketId === this.drawer.socketId) return;
 
 		if (!this.roundIsStarted) {
 			io.to(room).emit("message", { name, msg });
@@ -148,7 +153,10 @@ export default class GameController {
          
           this.drawRoundEnd();
         }
-			} else if (!Object.keys(this.playersGuessedCorrect).includes(socketId)) {
+			} else if (
+        this.playersGuessedCorrect
+          .findIndex(player => player.socketId === socketId) === -1
+      ) {
 				io.to(room).emit("message", { name, msg });
 			}	
 		}
@@ -187,10 +195,10 @@ export default class GameController {
 
   handleScore(socketId: string, currentTime: number) {
     const playerIndex = this.players
-      .findIndex(player => Object.keys(player)[0] === socketId);
+      .findIndex(player => player.socketId === socketId);
 
     const drawerIndex = this.players
-      .findIndex(player => Object.keys(player)[0] === Object.keys(this.drawer)[0]);
+      .findIndex(player => player.socketId === this.drawer.socketId);
 
     this.playersGuessedCorrect.push(this.players[playerIndex]);
 
@@ -199,9 +207,9 @@ export default class GameController {
     const timeBonus = Math.ceil(currentTime / 2);
     const score = basePoints - guessOrderPenalty + timeBonus;
     
-    Object.values(this.players[playerIndex])[0].score += score;
+    this.players[playerIndex].score += score;
 
-    Object.values(this.players[drawerIndex])[0].score += 6;
+    this.players[drawerIndex].score += 6;
 
     io.to(this.room).emit('players_in_room', this.players);
   }
@@ -234,7 +242,7 @@ export default class GameController {
   //players position in array), broadcast to room
   playerLeft(id: string) {
     const playerIndex = this.players
-      .findIndex(player => Object.keys(player)[0] === id);
+      .findIndex(player => player.socketId === id);
 
     if (this.drawer === this.players[playerIndex]) {
       if (playerIndex < this.players.length - 1) {
@@ -246,7 +254,7 @@ export default class GameController {
       this.drawRoundEnd(true);
     }
 
-    this.players = this.players.filter(player => Object.keys(player)[0] !== id);
+    this.players = this.players.filter(player => player.socketId !== id);
 
     if (this.players.length === 0) {
       this.gameEnd();
@@ -258,15 +266,15 @@ export default class GameController {
   //handle player ready and emit when all users are ready
   playerReady(id: string) {
     const playerIndex = this.players
-      .findIndex(player => Object.keys(player)[0] === id);
+      .findIndex(player => player.socketId === id);
 
-    this.players[playerIndex][id].ready = !this.players[playerIndex][id].ready;
+    this.players[playerIndex].ready = !this.players[playerIndex].ready;
     
     io.to(this.room).emit('players_in_room', this.players);
 
     console.log('player ready');
     
-    if (this.players.findIndex(player => !Object.values(player)[0].ready) === -1) {
+    if (this.players.findIndex(player => !player.ready) === -1) {
       io.to(this.room).emit('can_start', true);
       console.log('can start');
     } else {
@@ -284,15 +292,14 @@ export default class GameController {
       this.usedWordIndexes.push(randomIndex);
     }
 
-    const drawerId = this.drawer && Object.keys(this.drawer)[0];
-    io.to(drawerId).emit('draw_words', this.wordsToDraw);
+    io.to(this.drawer.socketId).emit('draw_words', this.wordsToDraw);
   }
   
   setSelectedWord(word: string) {
     this.selectedWord = word;
 
     if (this.drawer) {
-      io.to(Object.keys(this.drawer)[0]).emit('selected_word', this.selectedWord);
+      io.to(this.drawer.socketId).emit('selected_word', this.selectedWord);
     }
 
     this.wordsToDraw = [];
@@ -319,7 +326,7 @@ export default class GameController {
     this.gameIsStarted = true;
     io.to(this.room).emit('game_is_started', this.gameIsStarted);
 
-    this.players.forEach(player => player[Object.keys(player)[0]].ready = false);
+    this.players.forEach(player => player.ready = false);
     io.to(this.room).emit('players_in_room', this.players);
 
     this.pickWordRound();
@@ -340,7 +347,7 @@ export default class GameController {
 		this.countdown("round");
     
 		io.to(this.room).emit('server_message',
-      `Round has started. ${Object.values(this.drawer)[0].name} is drawing`);
+      `Round has started. ${this.drawer.name} is drawing`);
 	}
 
 	drawRoundEnd(drawerLeft: boolean = false) {
@@ -363,7 +370,7 @@ export default class GameController {
 
     if (this.playersGuessedCorrect.length > 0) {
       const players = this.playersGuessedCorrect
-        .map(player => Object.values(player)[0].name)
+        .map(player => player.name)
         .join(', ');
 
       io.to(this.room).emit('server_message', `The word was ${this.selectedWord}.
@@ -377,7 +384,7 @@ export default class GameController {
 
     if (!drawerLeft) {
       const drawerIndex = this.players
-        .findIndex(player => Object.keys(player)[0] === Object.keys(this.drawer)[0]);
+        .findIndex(player => player.socketId === this.drawer.socketId);
 
       if (drawerIndex < this.players.length - 1) {
         this.drawer = this.players[drawerIndex + 1];
@@ -406,7 +413,7 @@ export default class GameController {
     this.interval = null;
 
     this.players = this.players
-      .sort((a, b) => Object.values(b)[0].score - Object.values(a)[0].score);
+      .sort((a, b) => b.score - a.score);
 
     io.to(this.room).emit('game_over');
     io.to(this.room).emit('final_scores', this.players);

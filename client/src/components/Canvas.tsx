@@ -6,6 +6,7 @@ import styles from './Canvas.module.css';
 import ChooseWordOverlay from "./ChooseWordOverlay";
 import GameEndOverlay from "./GameEndOverlay";
 import Hint from './Hint';
+import { game } from '../stores/game.store';
 
 type Pos = {
   x: number
@@ -21,11 +22,6 @@ type RGB = {
 
 const Canvas: Component<{
   socket: Socket,
-  room: string,
-  isDrawer: boolean,
-  selectedWord: string,
-  isRoundStarted: boolean,
-  isGameOver: boolean
 }> = (props) => {
   const [paintTool, setPaintTool] = createSignal<"brush" | "bucket">("brush");
 	const [drawColor, setDrawColor] = createSignal<string>("#000000");
@@ -38,6 +34,7 @@ const Canvas: Component<{
 	let lastX: number;
 	let lastY: number;
   let imageData: any;
+  let isDrawer: boolean = (props.socket.id === game.drawer.socketId);
   let tick: any;
 
 	onMount(() => {
@@ -86,8 +83,8 @@ const Canvas: Component<{
 		if (e.buttons !== 1
           || paintTool() === "bucket"
           || outOfBounds(pos().x, pos().y)
-          || !props.isDrawer
-          || !props.isRoundStarted
+          || !isDrawer
+          || !game.roundStarted
         ) return;
 		ctx.beginPath();
 
@@ -193,7 +190,7 @@ const Canvas: Component<{
   }
 
   const bucket = (e: any) => {
-    if (paintTool() !== "bucket" || !props.isDrawer) return;
+    if (paintTool() !== "bucket" || !isDrawer) return;
     imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     handlePos(e);
     const clickedColor = getColorAtPos(imageData, pos().x, pos().y);
@@ -258,20 +255,6 @@ const Canvas: Component<{
     handleClear();
   });
 
-  props.socket.on('draw_words', words => {
-    setDrawWords(words);
-  });
-
-  props.socket.on('round_end', () => {
-    setDrawWords([]);
-  })
-
-  createEffect(() => {
-    props.socket.on('game_over', () => {
-      setDrawWords([]);
-    });
-  });
-
 	return (
 		<div class={styles.canvasContainer}>
       <div class={styles.canvasWrapper}>
@@ -279,17 +262,17 @@ const Canvas: Component<{
           <Hint socket={props.socket} />
         </div>
         <canvas ref={canvas} width="720" height="500"></canvas>
-        <Show when={!props.selectedWord && drawWords().length > 0 && !props.isGameOver} keyed>
-          <ChooseWordOverlay socket={props.socket} room={props.room} words={drawWords()} />
+        <Show when={!game.selectedWord && drawWords().length > 0 && !game.isGameOver} keyed>
+          <ChooseWordOverlay socket={props.socket} />
         </Show>
-        <Show when={props.isGameOver} keyed>
-          <GameEndOverlay socket={props.socket} room={props.room} />
+        <Show when={game.isGameOver} keyed>
+          <GameEndOverlay socket={props.socket} />
         </Show>
-        <Show when={props.selectedWord} keyed>
-          <div class={styles.wordOverlay}>Your word: {props.selectedWord}</div>
+        <Show when={game.selectedWord} keyed>
+          <div class={styles.wordOverlay}>Your word: {game.selectedWord}</div>
         </Show>
       </div>
-      <Show when={props.isDrawer} keyed>
+      <Show when={isDrawer} keyed>
         <div class={styles.controls}>
           <div class={styles.brushSizeContainer}>
             <div style={{

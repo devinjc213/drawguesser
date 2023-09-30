@@ -2,7 +2,7 @@ import type { Component } from "solid-js";
 import { createSignal } from "solid-js";
 import styles from './CreateRoom.module.css';
 import {Socket} from "socket.io-client";
-import {user} from "../stores/UserStore";
+import {user} from "../stores/user.store";
 
 export type RoomSettings = {
   name: string

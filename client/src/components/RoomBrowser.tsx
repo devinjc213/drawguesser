@@ -6,7 +6,7 @@ import CreateRoom from './CreateRoom';
 import styles from "./RoomBrowser.module.css";
 import type { Socket } from 'socket.io-client';
 import {Room} from "../types/room.type";
-import {user} from "../stores/UserStore";
+import {user} from "../stores/user.store";
 
 const RoomBrowser: Component<{
 	getRoom: SetStoreFunction<Game>,

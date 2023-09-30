@@ -3,6 +3,7 @@ import {Socket} from "socket.io-client";
 
 export type Game = {
   socket: Socket | null
+  roomId: string
   roomName: string
   drawer: User
   selectedWord: string
@@ -13,5 +14,6 @@ export type Game = {
   currentRound: number
   currentIntermissionTimer: number
   isGameOver: boolean
+  drawWords: string[]
   muted: boolean
 }

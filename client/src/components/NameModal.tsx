@@ -1,14 +1,13 @@
-import {Component, onMount, createSignal, createEffect, onCleanup } from 'solid-js';
-import type { SetStoreFunction } from "solid-js/store";
-import type { User } from '../types/user.type';
+import {Component, onMount, createSignal, onCleanup } from 'solid-js';
+import { user, setUser } from '../stores/user.store';
 import styles from './NameModal.module.css';
 
-const NameModal: Component<{setName: SetStoreFunction<User>}> = (props) => {
+const NameModal: Component = (props) => {
   const [name, setName] = createSignal<string>("");
   let inputRef: any;
   
   const submitName = (e: any) => {
-    if (e.key === "Enter") props.setName('name', name());
+    if (e.key === "Enter") setUser('name', name());
   }
 
   onMount(() => {

@@ -1,22 +1,16 @@
 import type {Component} from "solid-js";
-import {createSignal, Index} from "solid-js";
+import {createSignal} from "solid-js";
 import styles from "./GameEndOverlay.module.css";
 import {Socket} from "socket.io-client";
-
-export type User = {
-  [key: string]: {
-    name: string
-    score: number
-    ready?: boolean
-  }
-}
+import {User} from "../types/user.type";
+import {game} from "../stores/game.store";
 
 type Winners = {
   name: string
   score: number
 }
 
-const GameEndOverlay: Component<{socket: Socket, room: string}> = (props) => {
+const GameEndOverlay: Component<{socket: Socket}> = (props) => {
   const [winners, setWinners] = createSignal<Winners[]>([]);
 
   props.socket.on('final_scores', (data: User[]) => {
@@ -24,15 +18,15 @@ const GameEndOverlay: Component<{socket: Socket, room: string}> = (props) => {
       setWinners(winners => [
         ...winners,
         {
-          name: Object.values(player)[0].name,
-          score: Object.values(player)[0].score
+          name: player.name,
+          score: player.score
         }]);
 
     });
   });
 
   const playAgain = () => {
-    props.socket.emit('play_again', { room: props.room });
+    props.socket.emit('play_again', { room: game.roomId });
   }
 
   return (

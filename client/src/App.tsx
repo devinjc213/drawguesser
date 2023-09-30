@@ -2,8 +2,8 @@ import {createSignal, Show, onCleanup, createEffect, onMount} from 'solid-js';
 import type { Component } from 'solid-js';
 import { useParams } from '@solidjs/router';
 import { io } from "socket.io-client";
-import { game, setGame } from './stores/GameStore';
-import { user, setUser } from './stores/UserStore';
+import { game, setGame } from './stores/game.store';
+import { user, setUser } from './stores/user.store';
 import NameModal from './components/NameModal';
 import RoomBrowser from './components/RoomBrowser';
 import Canvas from './components/Canvas';
@@ -73,34 +73,17 @@ const App: Component = () => {
               <PlayerList socket={socket} drawer={game.drawer} />
               <GameControls
                 socket={socket}
-                room={game.roomName}
-                drawer={game.drawer}
-                roundStarted={game.roundStarted}
-                setRoom={setGame}
-                gameStarted={game.gameStarted}
                 setMute={setMuted}
                 muted={muted()}
               />
             </div>
-            <Chat
-              socket={socket}
-              drawer={game.drawer}
-              room={game.roomName}
-              roundStarted={game.roundStarted}
-            />
-            <Canvas
-              socket={socket}
-              room={game.roomName}
-              isDrawer={socket.id === game.drawer.socketId}
-              isRoundStarted={game.roundStarted}
-              selectedWord={game.selectedWord}
-              isGameOver={game.isGameOver}
-            />
+            <Chat socket={socket} />
+            <Canvas socket={socket} />
           </div>
 				</div>
 			</Show>	
 			<Show when={!user.name} keyed>
-				<NameModal setName={setUser} />
+				<NameModal />
 			</Show>
     </div>
   );

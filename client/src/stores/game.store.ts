@@ -4,6 +4,7 @@ import {User} from "../types/user.type";
 
 export const [game, setGame] = createStore<Game>({
   socket: null,
+  roomId: "",
   roomName: "lobby",
   drawer: {
     name: "",
@@ -18,6 +19,7 @@ export const [game, setGame] = createStore<Game>({
   currentRound: 0,
   currentIntermissionTimer: 0,
   isGameOver: true,
+  drawWords: [],
   muted: false,
 });
 
@@ -33,6 +35,12 @@ if (game.socket) {
   game.socket.on('round_start', () => setGame('roundStarted', true));
 
   game.socket.on('round_timer', (timer: number) => setGame('currentRoundTimer', timer));
+
+  game.socket.on('round_end', () => setGame('drawWords', []));
+
+  game.socket.on('game_over', () => setGame('drawWords', []));
+
+  game.socket.on('draw_words', words => setGame('drawWords', words));
 
   game.socket.on('intermission_timer', (timer: number) => {
     setGame('currentIntermissionTimer', timer);
