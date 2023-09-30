@@ -2,4 +2,6 @@ node_modules
 .idea
 go-server
 client/dist
+server/dist/GameController.js
+server/dist/index.js
 **/*.env
