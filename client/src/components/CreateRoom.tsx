@@ -2,6 +2,7 @@ import type { Component } from "solid-js";
 import { createSignal } from "solid-js";
 import styles from './CreateRoom.module.css';
 import {Socket} from "socket.io-client";
+import {user} from "../stores/UserStore";
 
 export type RoomSettings = {
   name: string
@@ -13,10 +14,10 @@ export type RoomSettings = {
   hintEnabledAfter: number
   words: string
 }
-const CreateRoom: Component<{socket: Socket, playerName: string}> = (props) => {
+const CreateRoom: Component<{socket: Socket}> = (props) => {
   const [roomSettings, setRoomSettings] = createSignal<RoomSettings>({
     name: "",
-    playerName: props.playerName,
+    playerName: user.name,
     roundTimer: 80,
     numberOfRounds: 3,
     maxNumberOfPlayers: 8,

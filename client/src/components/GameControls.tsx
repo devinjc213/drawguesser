@@ -1,18 +1,17 @@
 import type { Component, Setter } from "solid-js";
+import type { SetStoreFunction } from "solid-js/store";
 import type { Socket } from "socket.io-client";
-import type { User } from "../App";
+import type { User } from "../types/user.type";
+import { user } from '../stores/UserStore';
+import { game } from '../stores/GameStore';
 import {createEffect, createSignal, Show} from "solid-js";
 import { Icons } from "../assets/Icons";
 import styles from "./GameControls.module.css";
+import {Game} from "../types/game.type";
 
 const GameControls: Component<{
   socket: Socket,
-  room: string,
-  drawer: User,
-  name: string,
-  gameStarted: boolean,
-  roundStarted: boolean,
-  setRoom: Setter<string>,
+  setRoom: SetStoreFunction<Game>,
   setMute: Setter<boolean>,
   muted: boolean
 }> = (props) => {
@@ -36,7 +35,7 @@ const GameControls: Component<{
       socketId: props.socket.id
     });
 
-    props.setRoom("lobby");
+    props.setRoom('roomName', 'lobby');
   }
 
   createEffect(() => {
@@ -50,8 +49,8 @@ const GameControls: Component<{
 
   props.socket.on('players_in_room', (players: User[]) => {
     players.map(player => {
-      if (Object.keys(player)[0] === props.socket.id) {
-        setReady(Object.values(player)[0].ready ?? false);
+      if (player.socketId === props.socket.id) {
+        setReady(player.ready ?? false);
       }
     });
   });

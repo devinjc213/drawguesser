@@ -1,6 +1,9 @@
-import {createSignal, Show, onCleanup, createEffect} from 'solid-js';
+import {createSignal, Show, onCleanup, createEffect, onMount} from 'solid-js';
 import type { Component } from 'solid-js';
+import { useParams } from '@solidjs/router';
 import { io } from "socket.io-client";
+import { game, setGame } from './stores/GameStore';
+import { user, setUser } from './stores/UserStore';
 import NameModal from './components/NameModal';
 import RoomBrowser from './components/RoomBrowser';
 import Canvas from './components/Canvas';
@@ -18,68 +21,25 @@ const socket = io(
     : import.meta.env.VITE_PROD_IO_URL
 );
 
-export type User = {
-  [key: string]: {
-    name: string
-    score?: number
-    ready?: boolean
-  }
-}
-
-//need to clear all data on leave room button
 const App: Component = () => {
-	const [room, setRoom] = createSignal<string>("lobby");
-	const [name, setName] = createSignal<string>("");
-	const [drawer, setDrawer] = createSignal<User>({});
-  const [selectedWord, setSelectedWord] = createSignal<string>("");
-  const [currentRound, setCurrentRound] = createSignal<number>(1);
-  const [gameStarted, setGameStarted] = createSignal<boolean>(false);
-	const [roundStarted, setRoundStarted] = createSignal<boolean>(false);
-	const [currentRoundTime, setCurrentRoundTime] = createSignal<number>(45);
-  const [currentIntermissionTimer, setCurrentIntermissionTimer] =
-    createSignal<number>();
-  const [initialRooms, setInitialRooms] = createSignal<string[]>([]);
   const [muted, setMuted] = createSignal<boolean>(false);
-  const [isGameOver, setIsGameOver] = createSignal<boolean>(false);
 
   const sound_tick = new Audio(tick);
   const sound_guess = new Audio(correctGuess);
   const sound_game_over = new Audio(winner);
 
+  onMount(() => {
+    setGame('socket', socket)
+    const params = useParams();
+
+    if (params.room) {
+      socket.emit('join_room', { name: user.name, roomId: params.room } );
+    }
+  });
+
   onCleanup(() => socket.disconnect());
 
-  socket.on('play_again_start', () => setIsGameOver(false));
-  socket.on('initial_rooms', (rounds) => setInitialRooms(rounds));
-  socket.on('drawer_update', user => setDrawer(user));
-  socket.on('selected_word', word => setSelectedWord(word));
-	socket.on('create_join_room', room => setRoom(room));
-	socket.on('round_start', () => setRoundStarted(true));
-	socket.on('round_timer', (timer: number) => setCurrentRoundTime(timer));
-
-  socket.on('intermission_timer', (timer: number) => {
-    setCurrentIntermissionTimer(timer);
-  });
-
-  socket.on('round_end', (curRound) => {
-    setRoundStarted(false);
-    setCurrentRound(curRound);
-    setSelectedWord("");
-  });
-
-
-  socket.on('game_is_started', (gameIsStarted) => {
-      setGameStarted(gameIsStarted);
-  });
-
   socket.on('game_over', () => {
-    setIsGameOver(true);
-    setCurrentRoundTime(0);
-    setCurrentIntermissionTimer(0);
-    setCurrentRound(1);
-    setSelectedWord("");
-    setRoundStarted(false);
-    setGameStarted(false);
-
     if (!muted()) {
       sound_game_over.play();
     }
@@ -97,52 +57,50 @@ const App: Component = () => {
 
   return (
     <div class={styles.App}>
-			<Show when={(room() === "lobby" && name())} keyed>
-				<RoomBrowser getRoom={setRoom} playerName={name()} socket={socket} name={name()} initialRooms={initialRooms()}/>
+			<Show when={(game.roomName === "lobby" && user.name)} keyed>
+				<RoomBrowser getRoom={setGame} socket={socket} />
 			</Show>
-			<Show when={room() !== "lobby"} keyed>
+			<Show when={game.roomName !== "lobby"} keyed>
 				<div class={styles.gameContainer}>
           <div class={styles.topBar}>
             <div>
-              {`${room()} - Round ${currentRound()}`}
+              {`${game.roomName} - Round ${game.currentRound}`}
             </div>
-            <div>{roundStarted() ? currentRoundTime() : currentIntermissionTimer()}</div>
+            <div>{game.roundStarted ? game.currentRoundTimer : game.currentIntermissionTimer}</div>
           </div>
           <div class={styles.gameBody}> 
             <div class={styles.leftColumn}>
-              <PlayerList socket={socket} drawer={drawer()} />
+              <PlayerList socket={socket} drawer={game.drawer} />
               <GameControls
                 socket={socket}
-                room={room()}
-                drawer={drawer()}
-                name={name()}
-                roundStarted={roundStarted()}
-                setRoom={setRoom}
-                gameStarted={gameStarted()}
+                room={game.roomName}
+                drawer={game.drawer}
+                roundStarted={game.roundStarted}
+                setRoom={setGame}
+                gameStarted={game.gameStarted}
                 setMute={setMuted}
                 muted={muted()}
               />
             </div>
             <Chat
               socket={socket}
-              drawer={drawer()}
-              name={name()}
-              room={room()}
-              roundStarted={roundStarted()}
+              drawer={game.drawer}
+              room={game.roomName}
+              roundStarted={game.roundStarted}
             />
             <Canvas
               socket={socket}
-              room={room()}
-              isDrawer={socket.id === Object.keys(drawer())[0]}
-              isRoundStarted={roundStarted()}
-              selectedWord={selectedWord()}
-              isGameOver={isGameOver()}
+              room={game.roomName}
+              isDrawer={socket.id === game.drawer.socketId}
+              isRoundStarted={game.roundStarted}
+              selectedWord={game.selectedWord}
+              isGameOver={game.isGameOver}
             />
           </div>
 				</div>
 			</Show>	
-			<Show when={!name()} keyed>
-				<NameModal getName={setName} />
+			<Show when={!user.name} keyed>
+				<NameModal setName={setUser} />
 			</Show>
     </div>
   );
