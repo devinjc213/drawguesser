@@ -40,9 +40,11 @@ export default class GameController {
     hintEnabledAfter: number,
     words: string[]
   ) {
+    
     /*
       Room variables
      */
+
     this.room = room;
 		this.roundTimer = roundTimer;
     this.numberOfRounds = numberOfRounds;
@@ -51,12 +53,10 @@ export default class GameController {
     this.hintEnabledAfter = hintEnabledAfter;
     this.words = JSON.parse(fs.readFileSync(__dirname + '/1000_words.json', 'utf8')).concat(words);
 
-    console.log(words);
-    console.log(this.words);
-
     /*
       System variables
      */
+
     this.players = players;
     this.socket = socket;
     this.drawer = players[0];
@@ -85,6 +85,11 @@ export default class GameController {
       if (this.currentRoundTimer === this.roundTimer - this.hintEnabledAfter) {
         io.to(this.room).emit('hint_enabled', true);
       }
+
+      if (this. currentRoundTimer < 11 && this.currentRoundTimer > 0) {
+        io.to(this.room).emit('play_tick', true);
+      }
+
       if (this.currentRoundTimer > 0) this.currentRoundTimer -= 1;
       else {
         clearInterval(this.interval);
@@ -134,6 +139,7 @@ export default class GameController {
 		} else {
 			if (msg === this.selectedWord) {
 				io.to(this.room).emit('server_message', `${name} guessed the word!`);
+        io.to(this.room).emit('player_guessed_word', true);
 
         this.handleScore(socketId, this.currentRoundTimer);
         
@@ -195,7 +201,7 @@ export default class GameController {
     
     Object.values(this.players[playerIndex])[0].score += score;
 
-    Object.values(this.players[drawerIndex])[0].score += 10;
+    Object.values(this.players[drawerIndex])[0].score += 6;
 
     io.to(this.room).emit('players_in_room', this.players);
   }
@@ -257,11 +263,15 @@ export default class GameController {
     this.players[playerIndex][id].ready = !this.players[playerIndex][id].ready;
     
     io.to(this.room).emit('players_in_room', this.players);
+
+    console.log('player ready');
     
     if (this.players.findIndex(player => !Object.values(player)[0].ready) === -1) {
-      io.to(Object.keys(this.drawer)[0]).emit('can_start', true);
+      io.to(this.room).emit('can_start', true);
+      console.log('can start');
     } else {
-      io.to(Object.keys(this.drawer)[0]).emit('can_start', false);
+      io.to(this.room).emit('can_start', false);
+      console.log('cant start');
     }
   }
 
@@ -280,9 +290,12 @@ export default class GameController {
   
   setSelectedWord(word: string) {
     this.selectedWord = word;
+
     if (this.drawer) {
       io.to(Object.keys(this.drawer)[0]).emit('selected_word', this.selectedWord);
     }
+
+    this.wordsToDraw = [];
   }
 
   //round where drawer picks from a list of words.
@@ -336,15 +349,13 @@ export default class GameController {
     this.hintsGiven = 0;
     this.hintIndexes = [];
 
-    io.to(this.room).emit('clear_canvas');
-    io.to(this.room).emit('clear_pos');
-    io.to(this.room).emit('hint_enabled', false);
-
     this.currentRoundTimer = this.roundTimer;
     this.currentRoundStartTime = this.roundStartTime;
     this.currentChooseDrawWordTimer = this.chooseDrawWordTimer;
 
-    this.wordsToDraw = [];
+    io.to(this.room).emit('clear_canvas');
+    io.to(this.room).emit('clear_pos');
+    io.to(this.room).emit('hint_enabled', false);
 
     if (drawerLeft) {
       io.to(this.room).emit('server_message', 'The drawer left!  Round ended.');
@@ -365,18 +376,21 @@ export default class GameController {
     this.playersGuessedCorrect = [];
 
     if (!drawerLeft) {
-      const playerIndex = this.players
+      const drawerIndex = this.players
         .findIndex(player => Object.keys(player)[0] === Object.keys(this.drawer)[0]);
 
-      if (this.drawer === this.players[playerIndex]
-        && playerIndex < this.players.length - 1) {
-        this.drawer = this.players[playerIndex + 1];
+      if (drawerIndex < this.players.length - 1) {
+        this.drawer = this.players[drawerIndex + 1];
       } else {
         this.drawer = this.players[0];
+        this.currentRound++;
+
+        if (this.currentRound > this.numberOfRounds) {
+          this.gameEnd();
+          return;
+        }
       }
     }
-
-    this.currentRound++;
 
     io.to(this.room).emit('round_end', this.currentRound);
 
@@ -388,9 +402,34 @@ export default class GameController {
 	}
 
   gameEnd() {
-    io.to(this.room).emit('game_ended');
+    clearInterval(this.interval);
     this.interval = null;
+
+    this.players = this.players
+      .sort((a, b) => Object.values(b)[0].score - Object.values(a)[0].score);
+
+    io.to(this.room).emit('game_over');
+    io.to(this.room).emit('final_scores', this.players);
+    io.to(this.room).emit('clear_canvas');
+    io.to(this.room).emit('clear_pos');
+    io.to(this.room).emit('hint_enabled', false);
+    io.to(this.room).emit('can_start', false);
+    io.to(this.room).emit('game_is_started', false);
+
+    this.gameIsStarted = false;
+    this.roundIsStarted = false;
+    this.currentRound = 1;
+    this.hintsGiven = 0;
+    this.hintIndexes = [];
+    this.wordsToDraw = [];
+    this.usedWordIndexes = [];
+    this.selectedWord = "";
+    this.playersGuessedCorrect = [];
     this.currentRoundTimer = this.roundTimer;
+  }
+
+  playAgain() {
+    io.to(this.room).emit('play_again_start');
   }
 }
 

@@ -1,9 +1,10 @@
 import type { Component } from "solid-js";
-import {createSignal, onCleanup, onMount, Show} from "solid-js";
+import {createEffect, createSignal, onCleanup, onMount, Show} from "solid-js";
 import type { Socket } from "socket.io-client";
 import { Icons } from '../assets/Icons';
 import styles from './Canvas.module.css';
 import ChooseWordOverlay from "./ChooseWordOverlay";
+import GameEndOverlay from "./GameEndOverlay";
 import Hint from './Hint';
 
 type Pos = {
@@ -23,7 +24,8 @@ const Canvas: Component<{
   room: string,
   isDrawer: boolean,
   selectedWord: string,
-  isRoundStarted: boolean
+  isRoundStarted: boolean,
+  isGameOver: boolean
 }> = (props) => {
   const [paintTool, setPaintTool] = createSignal<"brush" | "bucket">("brush");
 	const [drawColor, setDrawColor] = createSignal<string>("#000000");
@@ -36,6 +38,7 @@ const Canvas: Component<{
 	let lastX: number;
 	let lastY: number;
   let imageData: any;
+  let tick: any;
 
 	onMount(() => {
     ctx = canvas.getContext("2d", { willReadFrequently: true });
@@ -263,6 +266,12 @@ const Canvas: Component<{
     setDrawWords([]);
   })
 
+  createEffect(() => {
+    props.socket.on('game_over', () => {
+      setDrawWords([]);
+    });
+  });
+
 	return (
 		<div class={styles.canvasContainer}>
       <div class={styles.canvasWrapper}>
@@ -270,8 +279,11 @@ const Canvas: Component<{
           <Hint socket={props.socket} />
         </div>
         <canvas ref={canvas} width="720" height="500"></canvas>
-        <Show when={!props.selectedWord && drawWords().length > 0} keyed>
+        <Show when={!props.selectedWord && drawWords().length > 0 && !props.isGameOver} keyed>
           <ChooseWordOverlay socket={props.socket} room={props.room} words={drawWords()} />
+        </Show>
+        <Show when={props.isGameOver} keyed>
+          <GameEndOverlay socket={props.socket} room={props.room} />
         </Show>
         <Show when={props.selectedWord} keyed>
           <div class={styles.wordOverlay}>Your word: {props.selectedWord}</div>
@@ -292,7 +304,7 @@ const Canvas: Component<{
               }}></div>
             <input type="range" min="1" max="50" step="1" value={brushSize()} oninput={(e) => handleBrushSize(e)} />
           </div>
-          <div class={styles.paintTools}>            
+          <div class={styles.paintTools}>
             <img
               src={Icons.PaintBrush}
               class={paintTool() === "brush" ? styles.activeToolLeft : ""}
@@ -347,7 +359,7 @@ const Canvas: Component<{
             }}
             alt="Clear canvas"
           />
-        </div> 
+        </div>
       </Show>
 		</div>
 	);

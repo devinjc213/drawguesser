@@ -27,7 +27,7 @@ const httpServer = createServer();
 
 export const io = new Server(httpServer, {
 	cors: {
-		origin: "*"
+		origin: "*",
 	}
 });
 
@@ -83,14 +83,24 @@ io.on("connection", (socket) => {
 		io.emit("clear_canvas", clearCanvas);
 	});
 
-	socket.on("create_room", (data) => {
+	socket.on("create_room", (data: {
+    name: string
+    playerName: string
+    roundTimer: number
+    numberOfRounds: number
+    maxNumberOfPlayers: number
+    maxHintsGiven: number
+    hintEnabledAfter: number
+    words: string
+  }) => {
 		socket.join(data.name);
 		socket.leave("lobby");
 		io.to(socket.id).emit("create_join_room", data.name);
+    console.log(data.playerName);
 
     GameRoomState[data.name] = new GameController(
       data.name,
-      [{[socket.id]: {name: data.name, score: 0}}],
+      [{[socket.id]: {name: data.playerName, score: 0}}],
       socket,
       data.roundTimer,
       data.numberOfRounds,
@@ -128,12 +138,16 @@ io.on("connection", (socket) => {
 
   socket.on('give_hint', data => {
     GameRoomState[data.room].handleHint();
-  })
+  });
 
   socket.on('leave_room', data => {
     GameRoomState[data.room].playerLeft(socket.id);
     io.to(socket.id).emit('room_update', Object.keys(GameRoomState));
-  })
+  });
+
+  socket.on('play_again', data => {
+    GameRoomState[data.room].playAgain();
+  });
 
   socket.on('disconnecting', () => {
     const room = Array.from(socket.rooms)[1];

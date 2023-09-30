@@ -1,7 +1,7 @@
 import type { Component, Setter } from "solid-js";
 import type { Socket } from "socket.io-client";
 import type { User } from "../App";
-import { createSignal, Show } from "solid-js";
+import {createEffect, createSignal, Show} from "solid-js";
 import { Icons } from "../assets/Icons";
 import styles from "./GameControls.module.css";
 
@@ -12,11 +12,12 @@ const GameControls: Component<{
   name: string,
   gameStarted: boolean,
   roundStarted: boolean,
-  setRoom: Setter<string>
+  setRoom: Setter<string>,
+  setMute: Setter<boolean>,
+  muted: boolean
 }> = (props) => {
   const [ready, setReady] = createSignal<boolean>(false);
   const [canStart, setCanStart] = createSignal<boolean>(false);
-  const [mute, setMute] = createSignal<boolean>(false);
   const [hintEnabled, setHintEnabled] = createSignal<boolean>(false);
 
   const handleReady = () => {
@@ -38,9 +39,22 @@ const GameControls: Component<{
     props.setRoom("lobby");
   }
 
-  props.socket.on('can_start', canStart => setCanStart(canStart));
+  createEffect(() => {
+    props.socket.on('can_start', canStart => {
+      setCanStart(canStart);
+      console.log(canStart);
+    });
+  });
 
   props.socket.on('hint_enabled', () => setHintEnabled(true));
+
+  props.socket.on('players_in_room', (players: User[]) => {
+    players.map(player => {
+      if (Object.keys(player)[0] === props.socket.id) {
+        setReady(Object.values(player)[0].ready ?? false);
+      }
+    });
+  });
 
   return ( 
     <div class={styles.gameControlWrapper}>
@@ -91,16 +105,16 @@ const GameControls: Component<{
             alt="mute"
             height="36"
             width="36"
-            onClick={() => setMute(true)}
+            onClick={() => props.setMute(true)}
           />
-          <Show when={mute()} keyed>
+          <Show when={props.muted} keyed>
             <img
               src={Icons.NoSign}
               class={styles.noSign}
               height="48"
               width="48"
               alt="unmute" 
-              onClick={() => setMute(false)}
+              onClick={() => props.setMute(false)}
             />
           </Show>
         </div>
