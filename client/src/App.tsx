@@ -4,6 +4,7 @@ import { useParams } from '@solidjs/router';
 import { io } from "socket.io-client";
 import { game, setGame } from './stores/game.store';
 import { user, setUser } from './stores/user.store';
+import { room, setRoom } from './stores/room.store';
 import NameModal from './components/NameModal';
 import RoomBrowser from './components/RoomBrowser';
 import Canvas from './components/Canvas';
@@ -29,7 +30,8 @@ const App: Component = () => {
   const sound_game_over = new Audio(winner);
 
   onMount(() => {
-    setGame('socket', socket)
+    setGame('socket', socket);
+    setRoom('socket', socket);
     const params = useParams();
 
     if (params.room) {
@@ -57,20 +59,20 @@ const App: Component = () => {
 
   return (
     <div class={styles.App}>
-			<Show when={(game.roomName === "lobby" && user.name)} keyed>
-				<RoomBrowser getRoom={setGame} socket={socket} />
+			<Show when={(room.name === "lobby" && user.name)} keyed>
+				<RoomBrowser socket={socket} />
 			</Show>
-			<Show when={game.roomName !== "lobby"} keyed>
+			<Show when={room.name !== "lobby"} keyed>
 				<div class={styles.gameContainer}>
           <div class={styles.topBar}>
             <div>
-              {`${game.roomName} - Round ${game.currentRound}`}
+              {`${room.name} - Round ${game.currentRound}`}
             </div>
-            <div>{game.roundStarted ? game.currentRoundTimer : game.currentIntermissionTimer}</div>
+            <div>{room.roundStarted ? game.currentRoundTimer : game.currentIntermissionTimer}</div>
           </div>
           <div class={styles.gameBody}> 
             <div class={styles.leftColumn}>
-              <PlayerList socket={socket} drawer={game.drawer} />
+              <PlayerList socket={socket} />
               <GameControls
                 socket={socket}
                 setMute={setMuted}

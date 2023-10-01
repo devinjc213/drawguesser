@@ -3,6 +3,7 @@ import type { Socket } from "socket.io-client";
 import type { User } from "../types/user.type";
 import { user } from '../stores/user.store';
 import {game, setGame} from '../stores/game.store';
+import {room, setRoom} from '../stores/room.store';
 import {createEffect, createSignal, Show} from "solid-js";
 import { Icons } from "../assets/Icons";
 import styles from "./GameControls.module.css";
@@ -18,22 +19,22 @@ const GameControls: Component<{
 
   const handleReady = () => {
     setReady(ready => !ready);
-    props.socket.emit('player_ready', { room: game.roomId });
+    props.socket.emit('player_ready', { room: room.id });
   }
 
 	const handleStart = () => {
-		props.socket.emit('start_game', { room: game.roomId });
+		props.socket.emit('start_game', { room: room.id });
 	}
 
   const handleLeaveRoom = () => {
     props.socket.emit('leave_room', {
-      room: game.roomId,
+      room: room.id,
       name: user.name,
       socketId: props.socket.id
     });
 
-    setGame('roomName', 'lobby');
-    setGame('roomId', '');
+    setRoom('name', 'lobby');
+    setRoom('id', '');
   }
 
   createEffect(() => {
@@ -54,7 +55,7 @@ const GameControls: Component<{
 
   return ( 
     <div class={styles.gameControlWrapper}>
-      <Show when={props.socket.id === game.drawer.socketId && game.gameStarted && hintEnabled()} keyed>
+      <Show when={props.socket.id === room.drawer.socketId && game.gameStarted && hintEnabled()} keyed>
         <div class={styles.hintControl}>
           <img
             src={Icons.Hint}
@@ -62,8 +63,8 @@ const GameControls: Component<{
             height="60"
             width="60"
             onClick={() => {
-              if (props.socket.id === game.drawer.socketId)
-                props.socket.emit('give_hint', { room: game.roomId });
+              if (props.socket.id === room.drawer.socketId)
+                props.socket.emit('give_hint', { room: room.id });
             }}
           />
         </div>
@@ -79,8 +80,8 @@ const GameControls: Component<{
         </div>
           <Show
             when={user.name
-                  && !game.roundStarted
-                  && game.drawer.socketId === props.socket.id}
+                  && !room.roundStarted
+                  && room.drawer.socketId === props.socket.id}
            keyed>
             <div
               class={canStart()

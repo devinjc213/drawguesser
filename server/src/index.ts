@@ -1,7 +1,7 @@
 import {createServer} from "http";
 import {Server} from "socket.io";
 import express from "express";
-import GameController from './GameController';
+import RoomController from "./controllers/room.controller";
 
 //dont like this implementation, need to think of something better
 //drawer needs to be a field and not stored separately in client and server
@@ -36,18 +36,18 @@ export const io = new Server(server, {
 
 console.log('server starting');
 
-const GameRoomState = new Map<string, GameController>();
+const GameRoomState = new Map<string, RoomController>();
 
 function generateId() {
   return Math.random().toString(36).substr(2, 9);
 }
 
 setInterval(() => {
-  for (const game in GameRoomState) {
-    if (GameRoomState.get(game)?.players.length === 0) {
-      GameRoomState.delete(game);
-      io.emit('room_update', Object.keys(GameRoomState));
-      console.log(`detected empty room... deleting ${game}`);
+  for (const room in GameRoomState) {
+    if (GameRoomState.get(room)?.players.length === 0) {
+      GameRoomState.delete(room);
+      io.emit('room_update', getRoomData());
+      console.log(`detected empty room... deleting ${room}`);
     }
   }
 }, 1000);
@@ -56,7 +56,7 @@ io.on("connection", (socket) => {
 	socket.join("lobby");
   console.log(`user ${socket.id} connected`);
 
-	io.to(socket.id).emit('initial_rooms', Object.keys(GameRoomState));
+	io.to(socket.id).emit('room_update', getRoomData());
 
   socket.on("message", (data) => {
     GameRoomState.get(data.roomId)?.handleMessage(data);
@@ -82,42 +82,40 @@ io.on("connection", (socket) => {
     }
 	});
 
-	socket.on("clear_pos", (clearPos) => {
-		io.emit("clear_pos", clearPos)
+	socket.on("clear_pos", (roomId: string) => {
+		io.to(roomId).emit("clear_pos", true)
 	});
 
-	socket.on("clear_canvas", (clearCanvas) => {
-		io.emit("clear_canvas", clearCanvas);
+	socket.on("clear_canvas", (roomId: string) => {
+		io.to(roomId).emit("clear_canvas", true);
 	});
 
 	socket.on("create_room", (data: {
-    roomId: string
+    id: string,
     name: string
-    playerName: string
-    roundTimer: number
+    maxPlayers: number
     numberOfRounds: number
-    maxNumberOfPlayers: number
-    maxHintsGiven: number
-    hintEnabledAfter: number
+    roundTimer: number
+    maxHints: number
+    hintsEnabledAfter: number
     words: string
+    playerName: string
   }) => {
 		socket.join(data.name);
 		socket.leave("lobby");
-		io.to(socket.id).emit("create_join_room", data.roomId);
-    console.log(data.playerName);
 
     const roomId = generateId();
+    io.to(socket.id).emit("create_join_room", { id: roomId, name: data.name });
 
-    const controller = new GameController(
+    const controller = new RoomController(
       roomId,
       data.name,
       [{ name: data.playerName, socketId: socket.id, score: 0 }],
-      socket,
-      data.roundTimer,
+      data.maxPlayers,
       data.numberOfRounds,
-      data.maxNumberOfPlayers,
-      data.maxHintsGiven,
-      data.hintEnabledAfter,
+      data.roundTimer,
+      data.maxHints,
+      data.hintsEnabledAfter,
       data.words.split(',').map((word: string) => word.trim())
     );
 
@@ -125,8 +123,8 @@ io.on("connection", (socket) => {
 
     console.log(`room created: ${data.name}`);
 
-    io.emit('room_update', Object.keys(GameRoomState));
-    io.to(socket.id).emit('players_in_room', GameRoomState.get(data.roomId)?.players);
+    io.emit('room_update', getRoomData());
+    io.to(socket.id).emit('players_in_room', GameRoomState.get(roomId)?.players);
 	});
 
 	socket.on("join_room", (data) => {
@@ -142,25 +140,24 @@ io.on("connection", (socket) => {
   });
 
 	socket.on('start_game', data => {
-		GameRoomState.get(data.roomId)?.gameStart();
+		GameRoomState.get(data.roomId)?.game.gameStart();
 	});
 
   socket.on('selected_word', data => {
-    GameRoomState.get(data.roomId)?.setSelectedWord(data.word);
+    GameRoomState.get(data.roomId)?.game.setSelectedWord(data.word);
   });
 
   socket.on('give_hint', data => {
-    GameRoomState.get(data.roomId)?.handleHint();
+    GameRoomState.get(data.roomId)?.game.handleHint();
   });
 
   socket.on('leave_room', data => {
-    ///////////////
     GameRoomState.get(data.roomId)?.playerLeft(socket.id);
-    io.to(socket.id).emit('room_update', Object.keys(GameRoomState));
+    io.to(socket.id).emit('room_update', getRoomData());
   });
 
   socket.on('play_again', data => {
-    GameRoomState.get(data.roomId)?.playAgain();
+    GameRoomState.get(data.roomId)?.game.playAgain();
   });
 
   socket.on('disconnecting', () => {
@@ -169,6 +166,25 @@ io.on("connection", (socket) => {
     console.log(`user ${socket.id} disconnected from room: ${room}`);
   });
 });
+
+function getRoomData() {
+  const rooms = [];
+
+  for (const room of GameRoomState.values()) {
+    rooms.push({
+      id: room.id,
+      name: room.name,
+      players: room.players,
+      drawer: room.drawer,
+      gameStarted: room.game.gameIsStarted,
+      roundStarted: room.game.roundIsStarted,
+      currentRound: room.game.currentRound,
+      numberOfRounds: room.numberOfRounds,
+    })
+  }
+
+  return rooms;
+}
 
 server.listen(4000);
 app.listen(3001);

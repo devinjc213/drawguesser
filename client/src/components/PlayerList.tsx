@@ -3,11 +3,11 @@ import type { User} from "../types/user.type";
 import type { Socket } from "socket.io-client";
 import { createSignal, For, Show } from "solid-js";
 import { Icons } from "../assets/Icons";
+import {room} from '../stores/room.store';
 import styles from "./PlayerList.module.css";
 
 const PlayerList: Component<{
-  socket: Socket,
-  drawer: User
+  socket: Socket
 }> = (props) => {
   const [playersInRoom, setPlayersInRoom] = createSignal<User[]>([]);
 
@@ -27,7 +27,7 @@ const PlayerList: Component<{
             <div class={styles.playerNameWrapper}>
               <span class={player.ready ? styles.greenText: ''}>
                 {player.name}
-                <Show when={player.socketId === props.drawer.socketId} keyed>
+                <Show when={player.socketId === room.drawer.socketId} keyed>
                   <img src={Icons.Pencil} height="16" width="16" alt="drawer" />
                 </Show>
               </span>

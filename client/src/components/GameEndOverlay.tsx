@@ -3,7 +3,7 @@ import {createSignal} from "solid-js";
 import styles from "./GameEndOverlay.module.css";
 import {Socket} from "socket.io-client";
 import {User} from "../types/user.type";
-import {game} from "../stores/game.store";
+import {room} from '../stores/room.store';
 
 type Winners = {
   name: string
@@ -26,7 +26,7 @@ const GameEndOverlay: Component<{socket: Socket}> = (props) => {
   });
 
   const playAgain = () => {
-    props.socket.emit('play_again', { room: game.roomId });
+    props.socket.emit('play_again', { room: room.id });
   }
 
   return (

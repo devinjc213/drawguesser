@@ -1,8 +1,7 @@
 import type { Component } from 'solid-js';
 import type { Socket } from 'socket.io-client';
-import type { User } from '../types/user.type';
 import { user } from '../stores/user.store';
-import { game } from '../stores/game.store';
+import { room } from '../stores/room.store';
 import { For, createSignal, createEffect, onMount, onCleanup } from 'solid-js';
 import styles from './Chat.module.css';
 
@@ -43,13 +42,13 @@ const Chat: Component<{
 
 	const handleSendMessage = () => {
 		if (!message()
-        || (game.drawer.name === user.name) && game.roundStarted) return;
+        || (room.drawer.name === user.name) && room.roundStarted) return;
 
 		props.socket.emit('message', {
       socketId: props.socket.id,
       name: user.name,
       msg: message(),
-      room: game.roomId
+      room: room.id
     });
 
 		setMessage("");

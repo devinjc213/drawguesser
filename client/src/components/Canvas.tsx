@@ -7,6 +7,7 @@ import ChooseWordOverlay from "./ChooseWordOverlay";
 import GameEndOverlay from "./GameEndOverlay";
 import Hint from './Hint';
 import { game } from '../stores/game.store';
+import {room, setRoom} from "../stores/room.store";
 
 type Pos = {
   x: number
@@ -34,7 +35,7 @@ const Canvas: Component<{
 	let lastX: number;
 	let lastY: number;
   let imageData: any;
-  let isDrawer: boolean = (props.socket.id === game.drawer.socketId);
+  let isDrawer: boolean = (props.socket.id === room.drawer.socketId);
   let tick: any;
 
 	onMount(() => {
@@ -84,7 +85,7 @@ const Canvas: Component<{
           || paintTool() === "bucket"
           || outOfBounds(pos().x, pos().y)
           || !isDrawer
-          || !game.roundStarted
+          || !room.roundStarted
         ) return;
 		ctx.beginPath();
 

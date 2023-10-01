@@ -2,6 +2,7 @@ import type { Component } from "solid-js";
 import type { Socket } from "socket.io-client";
 import { For } from "solid-js";
 import { game } from "../stores/game.store";
+import { room } from "../stores/room.store";
 import styles from "./ChooseWordOverlay.module.css";
 
 const ChooseWordOverlay: Component<{
@@ -9,7 +10,7 @@ const ChooseWordOverlay: Component<{
 }> = (props) => {
   
   const handleSelection = (word: string) => {
-    props.socket.emit('selected_word', { room: game.roomId, word: word });
+    props.socket.emit('selected_word', { room: room.id, word: word });
   }
 
   return (
