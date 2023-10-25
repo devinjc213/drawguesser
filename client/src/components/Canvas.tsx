@@ -29,7 +29,8 @@ const Canvas: Component<{
 	const [brushSize, setBrushSize] = createSignal<number>(5);
   const [drawWords, setDrawWords] = createSignal<string[]>([]);
 	const [pos, setPos] = createSignal<{ x: number, y: number}>({x:0,y:0});
-	let rect: any;
+  const [lastImageData, setLastImageData] = createSignal<any>(null);
+  let rect: any;
 	let canvas: any;
 	let ctx: any;
 	let lastX: number;
@@ -67,6 +68,10 @@ const Canvas: Component<{
 		ctx.fillRect(0, 0, canvas.width, canvas.height);
 	}
 
+  const handleUndo = () => {
+    ctx.putImageData(lastImageData());
+  }
+
 	const handlePos = (e: any) => {
 		rect = canvas.getBoundingClientRect();
 
@@ -87,6 +92,7 @@ const Canvas: Component<{
           || !isDrawer
           || !room.roundStarted
         ) return;
+    setLastImageData(imageData);
 		ctx.beginPath();
 
 		ctx.lineWidth = brushSize();
@@ -146,7 +152,8 @@ const Canvas: Component<{
 
   const floodFill = (stack: Pos[], clickedColor: RGB, bucketColor: RGB) => {
     let pixel: Pos;
-    //TODO: Figure out antialiasing issue
+    setLastImageData(imageData);
+    //TODO: Fix endless loop that crashes client if bucket tool used quickly/unknown reasons
     while (stack.length) {
       pixel = stack.pop()!;
       let continueDown = true;
@@ -237,11 +244,11 @@ const Canvas: Component<{
 
 	props.socket.on('canvas_emit', data => {
     if (data.id !== props.socket.id) {
-      if (data.type === "draw")
-        //need to refactor to have 1 draw function per tool
+      setLastImageData(imageData);
+      if (data.type === "draw") {
         emitDraw(data.x, data.y, data.color, data.brushSize);
-      else if (data.type === "bucket") {
-        imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      } else if (data.type === "bucket") {
+        // imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         floodFill(data.stack, data.clickedColor, data.bucketColor);
       }
     }

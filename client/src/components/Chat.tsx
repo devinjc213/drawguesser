@@ -58,6 +58,10 @@ const Chat: Component<{
 		if (data) setChat(chat => [...chat, { name: data.name, msg: data.msg }]);
 	});
 
+  props.socket.on('chat_history', data => {
+    setChat(data);
+  });
+
   props.socket.on('server_message', msg => {
     setChat(chat => [...chat, { name: 'SERVER', msg: msg, serverMsg: true }]);
   });

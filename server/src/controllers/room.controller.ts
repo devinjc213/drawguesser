@@ -14,7 +14,7 @@ export default class RoomController {
   public numberOfRounds: number;
   public maxHints: number;
   public hintsEnabledAfter: number;
-  public chatHistory: MessageType[];
+  public chatHistory: Partial<MessageType>[];
 
   constructor(
     id: string,
@@ -48,6 +48,7 @@ export default class RoomController {
     this.players = [...this.players, player];
     io.to(this.id).emit('players_in_room', this.players);
     io.to(this.id).emit('drawer_update', this.drawer);
+    io.to(player.socketId).emit('chat_history', this.chatHistory);
   }
 
   playerLeft(id: string) {
@@ -97,6 +98,7 @@ export default class RoomController {
 
     if (!this.game.roundIsStarted) {
       io.to(room).emit("message", { name, msg });
+      this.chatHistory.push({ name, msg });
     } else {
       if (msg === this.game.selectedWord) {
         io.to(this.id).emit('server_message', `${name} guessed the word!`);
@@ -114,6 +116,7 @@ export default class RoomController {
           .findIndex(player => player.socketId === socketId) === -1
       ) {
         io.to(room).emit("message", { name, msg });
+        this.chatHistory.push({ name, msg });
       }
     }
   }

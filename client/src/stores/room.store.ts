@@ -3,6 +3,8 @@ import type {Room} from "../types/room.type";
 import {game, setGame} from "./game.store";
 import {User} from "../types/user.type";
 import {createEffect} from "solid-js";
+
+export const [browserRooms, setBrowserRooms] = createStore<Room[]>([]);
 export const [room, setRoom] = createStore<Room>({
   socket: null,
   id: "",
@@ -20,14 +22,14 @@ export const [room, setRoom] = createStore<Room>({
   hintsEnabledAfter: 0
 });
 
-function updateUrl() {
-  const url = new URL(window.location.href);
-  const string = url.toString() + room.id;
-  window.history.pushState({}, '', string);
-}
+// function updateUrl() {
+//   const url = new URL(window.location.href);
+//   const string = url.toString() + room.id;
+//   window.history.pushState({}, '', string);
+// }
 
 createEffect(() => {
-  updateUrl();
+  // updateUrl();
 
   if (room.socket) {
     room.socket.on('round_end', (curRound: number) => {
@@ -37,14 +39,23 @@ createEffect(() => {
     });
 
     room.socket.on('create_join_room', (room: { id: string, name: string }) => {
+      console.log(room);
       setRoom('id', room.id);
       setRoom('name', room.name)
-      console.log('setting room id');
     });
 
     room.socket.on('drawer_update', (drawer: User) => setRoom('drawer', drawer));
 
     room.socket.on('round_start', () => setRoom('roundStarted', true));
+
+    room.socket.on('room_update', (rooms: Room[]) => {
+      setBrowserRooms(rooms);
+    });
+
+    room.socket.on('players_in_room', (players: User[]) => {
+      console.log('players', players);
+      setRoom('users', players);
+    });
   }
 });
 

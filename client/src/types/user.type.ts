@@ -1,6 +1,6 @@
 export type User = {
-  name: string
   socketId: string
+  name: string
   score: number
   ready?: boolean
 }

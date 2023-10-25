@@ -91,7 +91,6 @@ io.on("connection", (socket) => {
 	});
 
 	socket.on("create_room", (data: {
-    id: string,
     name: string
     maxPlayers: number
     numberOfRounds: number
@@ -101,11 +100,9 @@ io.on("connection", (socket) => {
     words: string
     playerName: string
   }) => {
-		socket.join(data.name);
-		socket.leave("lobby");
-
     const roomId = generateId();
-    io.to(socket.id).emit("create_join_room", { id: roomId, name: data.name });
+    socket.leave("lobby");
+    socket.join(roomId);
 
     const controller = new RoomController(
       roomId,
@@ -122,42 +119,43 @@ io.on("connection", (socket) => {
     GameRoomState.set(roomId, controller);
 
     console.log(`room created: ${data.name}`);
-
+    console.log(`room id: ${roomId}`)
+    console.log(data.name);
+    io.to(socket.id).emit("create_join_room", { id: roomId, name: data.name });
     io.emit('room_update', getRoomData());
     io.to(socket.id).emit('players_in_room', GameRoomState.get(roomId)?.players);
 	});
 
 	socket.on("join_room", (data) => {
-		socket.join(data.roomId);
+		socket.join(data.room);
 		socket.leave("lobby");
-		io.to(data.roomId).emit('user_joined', data.name);
-		GameRoomState.get(data.roomId)?.playerJoined({ name: data.name, socketId: socket.id, score: 0 })
-    console.log(`user ${data.name} joined room: ${data.roomId}`);
+		GameRoomState.get(data.room)?.playerJoined({ name: data.name, socketId: socket.id, score: 0 })
+    console.log(`user ${data.name} joined room: ${data.room}`);
 	});
 
   socket.on('player_ready', data => {
-    GameRoomState.get(data.roomId)?.playerReady(socket.id);
+    GameRoomState.get(data.room)?.playerReady(socket.id);
   });
 
 	socket.on('start_game', data => {
-		GameRoomState.get(data.roomId)?.game.gameStart();
+		GameRoomState.get(data.room)?.game.gameStart();
 	});
 
   socket.on('selected_word', data => {
-    GameRoomState.get(data.roomId)?.game.setSelectedWord(data.word);
+    GameRoomState.get(data.room)?.game.setSelectedWord(data.word);
   });
 
   socket.on('give_hint', data => {
-    GameRoomState.get(data.roomId)?.game.handleHint();
+    GameRoomState.get(data.room)?.game.handleHint();
   });
 
   socket.on('leave_room', data => {
-    GameRoomState.get(data.roomId)?.playerLeft(socket.id);
+    GameRoomState.get(data.room)?.playerLeft(socket.id);
     io.to(socket.id).emit('room_update', getRoomData());
   });
 
   socket.on('play_again', data => {
-    GameRoomState.get(data.roomId)?.game.playAgain();
+    GameRoomState.get(data.room)?.game.playAgain();
   });
 
   socket.on('disconnecting', () => {
