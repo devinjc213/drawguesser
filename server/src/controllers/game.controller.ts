@@ -152,6 +152,7 @@ export default class GameController {
     io.to(this.room.drawer.socketId).emit('selected_word', this.selectedWord);
 
     this.wordsToDraw = [];
+    io.to(this.room.id).emit('draw_words', this.wordsToDraw);
   }
 
   pickWordRound() {

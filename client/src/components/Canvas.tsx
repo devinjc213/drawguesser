@@ -27,15 +27,14 @@ const Canvas: Component<{
   const [paintTool, setPaintTool] = createSignal<"brush" | "bucket">("brush");
 	const [drawColor, setDrawColor] = createSignal<string>("#000000");
 	const [brushSize, setBrushSize] = createSignal<number>(5);
-  const [drawWords, setDrawWords] = createSignal<string[]>([]);
 	const [pos, setPos] = createSignal<{ x: number, y: number}>({x:0,y:0});
-  const [lastImageData, setLastImageData] = createSignal<any>(null);
   let rect: any;
 	let canvas: any;
 	let ctx: any;
 	let lastX: number;
 	let lastY: number;
-  let imageData: any;
+  let imageData: ImageData;
+  let lastImageData: ImageData;
   let isDrawer: boolean = (props.socket.id === room.drawer.socketId);
   let tick: any;
 
@@ -44,6 +43,7 @@ const Canvas: Component<{
     ctx.fillStyle = "white";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+    document.addEventListener('mousedown', handleLastImageData);
     document.addEventListener('mousemove', draw);
     document.addEventListener('mousedown', handlePos);
     document.addEventListener('mousedown', bucket);
@@ -59,6 +59,17 @@ const Canvas: Component<{
     document.removeEventListener('mouseEnter', handlePos);
   });
 
+  const handleLastImageData = (e: any) => {
+    if (canvas.contains(e.target)) {
+      lastImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      props.socket.emit('save_image_data', true);
+    }
+  }
+
+  props.socket.on('save_image_data', () => {
+    lastImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  });
+
 	const handleBrushSize = (e: any) => {
 		setBrushSize(e.currentTarget.value);
 	}
@@ -69,8 +80,15 @@ const Canvas: Component<{
 	}
 
   const handleUndo = () => {
-    ctx.putImageData(lastImageData());
+    handleClear();
+    ctx.putImageData(lastImageData, 0, 0);
+    props.socket.emit('undo', true);
   }
+
+  props.socket.on('undo', () => {
+    handleClear();
+    ctx.putImageData(lastImageData, 0, 0);
+  });
 
 	const handlePos = (e: any) => {
 		rect = canvas.getBoundingClientRect();
@@ -92,7 +110,6 @@ const Canvas: Component<{
           || !isDrawer
           || !room.roundStarted
         ) return;
-    setLastImageData(imageData);
 		ctx.beginPath();
 
 		ctx.lineWidth = brushSize();
@@ -130,7 +147,7 @@ const Canvas: Component<{
       Math.abs(color1.b - color2.b) <= tolerance;
   }
 
-  const getColorAtPos = (imageData: any, x: number, y: number) => {
+  const getColorAtPos = (imageData: ImageData, x: number, y: number) => {
     const {width, data} = imageData;
 
     return {
@@ -141,7 +158,7 @@ const Canvas: Component<{
     }
   }
 
-  const setColorAtPos = (imageData: any, color: RGB, x: number, y: number) => {
+  const setColorAtPos = (imageData: ImageData, color: RGB, x: number, y: number) => {
     const {width, data} = imageData;
 
     data[4 * (width * y + x)] = color.r;
@@ -152,7 +169,6 @@ const Canvas: Component<{
 
   const floodFill = (stack: Pos[], clickedColor: RGB, bucketColor: RGB) => {
     let pixel: Pos;
-    setLastImageData(imageData);
     //TODO: Fix endless loop that crashes client if bucket tool used quickly/unknown reasons
     while (stack.length) {
       pixel = stack.pop()!;
@@ -244,11 +260,9 @@ const Canvas: Component<{
 
 	props.socket.on('canvas_emit', data => {
     if (data.id !== props.socket.id) {
-      setLastImageData(imageData);
       if (data.type === "draw") {
         emitDraw(data.x, data.y, data.color, data.brushSize);
       } else if (data.type === "bucket") {
-        // imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         floodFill(data.stack, data.clickedColor, data.bucketColor);
       }
     }
@@ -270,7 +284,7 @@ const Canvas: Component<{
           <Hint socket={props.socket} />
         </div>
         <canvas ref={canvas} width="720" height="500"></canvas>
-        <Show when={!game.selectedWord && drawWords().length > 0 && !game.isGameOver} keyed>
+        <Show when={!game.selectedWord && game.drawWords.length > 0 && !game.isGameOver} keyed>
           <ChooseWordOverlay socket={props.socket} />
         </Show>
         <Show when={game.isGameOver} keyed>
@@ -340,13 +354,20 @@ const Canvas: Component<{
             </div>
           </div>
           <img
+            src={Icons.Eraser}
+            height="36"
+            width="36"
+            style={{ cursor: "pointer" }}
+            onClick={() => handleUndo()}
+            alt="Undo"
+          />
+          <img
             src={Icons.TrashCan}
-            height="48"
-            width="48"
+            height="36"
+            width="36"
             style={{ cursor: "pointer" }}
             onClick={() => {
               handleClear();
-              props.socket.emit("clear_canvas", true);
             }}
             alt="Clear canvas"
           />

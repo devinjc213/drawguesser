@@ -11,8 +11,8 @@ export const [room, setRoom] = createStore<Room>({
   name: "lobby",
   users: [],
   drawer: {
-    name: "",
     socketId: "",
+    name: "",
     score: 0,
   },
   maxPlayers: 0,
