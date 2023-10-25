@@ -8,6 +8,7 @@ import GameEndOverlay from "./GameEndOverlay";
 import Hint from './Hint';
 import { game } from '../stores/game.store';
 import {room, setRoom} from "../stores/room.store";
+import {user} from "../stores/user.store";
 
 type Pos = {
   x: number
@@ -28,6 +29,7 @@ const Canvas: Component<{
 	const [drawColor, setDrawColor] = createSignal<string>("#000000");
 	const [brushSize, setBrushSize] = createSignal<number>(5);
 	const [pos, setPos] = createSignal<{ x: number, y: number}>({x:0,y:0});
+  const [isDrawer, setIsDrawer] = createSignal(props.socket.id === room.drawer.socketId);
   let rect: any;
 	let canvas: any;
 	let ctx: any;
@@ -35,7 +37,6 @@ const Canvas: Component<{
 	let lastY: number;
   let imageData: ImageData;
   let lastImageData: ImageData;
-  let isDrawer: boolean = (props.socket.id === room.drawer.socketId);
   let tick: any;
 
 	onMount(() => {
@@ -52,6 +53,7 @@ const Canvas: Component<{
   });
 
 	onCleanup(() => {
+    document.removeEventListener('mousedown', handleLastImageData);
     document.removeEventListener('mousemove', draw);
     document.removeEventListener('mousedown', handlePos);
     document.removeEventListener('mousedown', bucket);
@@ -62,12 +64,14 @@ const Canvas: Component<{
   const handleLastImageData = (e: any) => {
     if (canvas.contains(e.target)) {
       lastImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      props.socket.emit('save_image_data', true);
+      props.socket.emit('save_image_data', props.socket.id);
     }
   }
 
-  props.socket.on('save_image_data', () => {
-    lastImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  props.socket.on('save_image_data', (id: string) => {
+    if (id !== props.socket.id) {
+      lastImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    }
   });
 
 	const handleBrushSize = (e: any) => {
@@ -82,12 +86,14 @@ const Canvas: Component<{
   const handleUndo = () => {
     handleClear();
     ctx.putImageData(lastImageData, 0, 0);
-    props.socket.emit('undo', true);
+    props.socket.emit('undo', props.socket.id);
   }
 
-  props.socket.on('undo', () => {
-    handleClear();
-    ctx.putImageData(lastImageData, 0, 0);
+  props.socket.on('undo', (id: string) => {
+    if (id !== props.socket.id) {
+      handleClear();
+      ctx.putImageData(lastImageData, 0, 0);
+    }
   });
 
 	const handlePos = (e: any) => {
@@ -225,6 +231,7 @@ const Canvas: Component<{
 
     stack.push({ x: pos().x, y: pos().y });
     props.socket.emit('canvas_emit', {
+        id: props.socket.id,
         type: "bucket",
         stack,
         clickedColor,
@@ -233,7 +240,6 @@ const Canvas: Component<{
 
     floodFill(stack, clickedColor, bucketColor);
   }
-  
 
 	const clearPos = () => {
 		setPos({ x: 0, y: 0 });
@@ -241,18 +247,17 @@ const Canvas: Component<{
 	}
 
 	const emitDraw = (x: number, y: number, color: string, brushSize: number) => {
-		ctx.beginPath();
-
 		ctx.lineWidth = brushSize;
 		ctx.lineCap = 'round';
 		ctx.strokeStyle = color;
 
 		if (lastX && lastY) {
-			ctx.moveTo(lastX, lastY);
-			ctx.lineTo(x, y);
+      ctx.beginPath(); // Begin a new path for each line segment
+      ctx.moveTo(lastX, lastY);
+      ctx.lineTo(x, y);
+      ctx.stroke();
+      ctx.closePath(); // Close the path for the current line segment
 		}
-
-		ctx.stroke();
 
 		lastX = x;
 		lastY = y;
@@ -271,6 +276,7 @@ const Canvas: Component<{
 	props.socket.on('clear_pos', () => {
     lastX = 0;
     lastY = 0;
+    console.log('cleared pos');
   });
 
 	props.socket.on('clear_canvas', () => {
@@ -294,7 +300,7 @@ const Canvas: Component<{
           <div class={styles.wordOverlay}>Your word: {game.selectedWord}</div>
         </Show>
       </div>
-      <Show when={isDrawer} keyed>
+      <Show when={isDrawer()} keyed>
         <div class={styles.controls}>
           <div class={styles.brushSizeContainer}>
             <div style={{
