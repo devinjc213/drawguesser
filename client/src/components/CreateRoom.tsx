@@ -1,5 +1,5 @@
 import type { Component } from "solid-js";
-import { createSignal } from "solid-js";
+import {createSignal, onCleanup, onMount} from "solid-js";
 import styles from './CreateRoom.module.css';
 import {Socket} from "socket.io-client";
 import {user} from "../stores/user.store";
@@ -25,6 +25,27 @@ const CreateRoom: Component<{socket: Socket}> = (props) => {
     words: "",
     playerName: user.name,
   });
+  let roomNameRef: any;
+
+  onMount(() => {
+    roomNameRef.focus();
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        handleCreateRoom();
+      }
+    });
+  });
+
+  onCleanup(() => {
+    document.removeEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        handleCreateRoom();
+      }
+    });
+  })
 
   const handleCreateRoom = () => {
     props.socket.emit('create_room', roomSettings());
@@ -40,6 +61,7 @@ const CreateRoom: Component<{socket: Socket}> = (props) => {
           ...roomSettings(),
           name: e.currentTarget.value
         })}
+        ref={roomNameRef}
       />
       <label>Round timer:</label>
       <input

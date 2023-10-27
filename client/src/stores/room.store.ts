@@ -44,7 +44,10 @@ createEffect(() => {
       setRoom('name', room.name)
     });
 
-    room.socket.on('drawer_update', (drawer: User) => setRoom('drawer', drawer));
+    room.socket.on('drawer_update', (drawer: User) => {
+      setRoom('drawer', drawer)
+      console.log('drawer updated', drawer);
+    });
 
     room.socket.on('round_start', () => setRoom('roundStarted', true));
 

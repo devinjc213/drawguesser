@@ -39,6 +39,10 @@ const Canvas: Component<{
   let lastImageData: ImageData;
   let tick: any;
 
+  createEffect(() => {
+    setIsDrawer(props.socket.id === room.drawer.socketId);
+  });
+
 	onMount(() => {
     ctx = canvas.getContext("2d", { willReadFrequently: true });
     ctx.fillStyle = "white";
@@ -65,12 +69,14 @@ const Canvas: Component<{
     if (canvas.contains(e.target)) {
       lastImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
       props.socket.emit('save_image_data', props.socket.id);
+      console.log('save image data sent');
     }
   }
 
   props.socket.on('save_image_data', (id: string) => {
     if (id !== props.socket.id) {
       lastImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      console.log('save image data received');
     }
   });
 
@@ -87,12 +93,14 @@ const Canvas: Component<{
     handleClear();
     ctx.putImageData(lastImageData, 0, 0);
     props.socket.emit('undo', props.socket.id);
+    console.log('undo sent');
   }
 
   props.socket.on('undo', (id: string) => {
     if (id !== props.socket.id) {
       handleClear();
       ctx.putImageData(lastImageData, 0, 0);
+      console.log('undo received');
     }
   });
 
@@ -154,6 +162,7 @@ const Canvas: Component<{
   }
 
   const getColorAtPos = (imageData: ImageData, x: number, y: number) => {
+    if (!imageData) imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const {width, data} = imageData;
 
     return {
@@ -165,6 +174,7 @@ const Canvas: Component<{
   }
 
   const setColorAtPos = (imageData: ImageData, color: RGB, x: number, y: number) => {
+    if (!imageData) imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const {width, data} = imageData;
 
     data[4 * (width * y + x)] = color.r;
@@ -175,6 +185,7 @@ const Canvas: Component<{
 
   const floodFill = (stack: Pos[], clickedColor: RGB, bucketColor: RGB) => {
     let pixel: Pos;
+    if (!imageData) imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     //TODO: Fix endless loop that crashes client if bucket tool used quickly/unknown reasons
     while (stack.length) {
       pixel = stack.pop()!;
@@ -182,6 +193,7 @@ const Canvas: Component<{
       let continueUp = true;
       let continueLeft = false;
       let continueRight = false;
+      console.log('in loop');
 
       while (continueUp && pixel.y > 0) {
         pixel.y--;
@@ -190,6 +202,7 @@ const Canvas: Component<{
 
       while (continueDown && pixel.y < canvas.height  - 1) {
         setColorAtPos(imageData, bucketColor, pixel.x, pixel.y);
+        console.log('setting color', bucketColor);
 
         if (pixel.x - 1 >= 0 && 
             colorMatch(getColorAtPos(imageData, pixel.x - 1, pixel.y), clickedColor, 200)) {
@@ -221,7 +234,7 @@ const Canvas: Component<{
 
   const bucket = (e: any) => {
     if (paintTool() !== "bucket" || !isDrawer) return;
-    imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    if (!imageData) imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     handlePos(e);
     const clickedColor = getColorAtPos(imageData, pos().x, pos().y);
     const bucketColor = hexToRgb(drawColor());
@@ -268,6 +281,7 @@ const Canvas: Component<{
       if (data.type === "draw") {
         emitDraw(data.x, data.y, data.color, data.brushSize);
       } else if (data.type === "bucket") {
+        console.log('bucket received');
         floodFill(data.stack, data.clickedColor, data.bucketColor);
       }
     }
@@ -300,7 +314,7 @@ const Canvas: Component<{
           <div class={styles.wordOverlay}>Your word: {game.selectedWord}</div>
         </Show>
       </div>
-      <Show when={isDrawer()} keyed>
+      {isDrawer() && (
         <div class={styles.controls}>
           <div class={styles.brushSizeContainer}>
             <div style={{
@@ -312,8 +326,8 @@ const Canvas: Component<{
               top: "40%",
               left: "50%",
               transform: "translate(-50%, -50%)"
-              }}></div>
-            <input type="range" min="1" max="50" step="1" value={brushSize()} oninput={(e) => handleBrushSize(e)} />
+            }}></div>
+            <input type="range" min="1" max="50" step="1" value={brushSize()} onInput={(e) => handleBrushSize(e)} />
           </div>
           <div class={styles.paintTools}>
             <img
@@ -335,28 +349,28 @@ const Canvas: Component<{
           </div>
           <div class={styles.colorContainer}>
             <div class={styles.colorRow}>
-              <div class={styles.colorSquare} style={{background: "#000"}} onclick={() => setDrawColor("#000")} />
-              <div class={styles.colorSquare} style={{background: "#545454"}} onclick={() => setDrawColor("#545454")} />
-              <div class={styles.colorSquare} style={{background: "#804000"}} onclick={() => setDrawColor("#804000")} />
-              <div class={styles.colorSquare} style={{background: "#FE0000"}} onclick={() => setDrawColor("#FE0000")} />
-              <div class={styles.colorSquare} style={{background: "#FE6A00"}} onclick={() => setDrawColor("#FE6A00")} />
-              <div class={styles.colorSquare} style={{background: "#FFD800"}} onclick={() => setDrawColor("#FFD800")} />
-              <div class={styles.colorSquare} style={{background: "#00FE20"}} onclick={() => setDrawColor("#00FE20")} />
-              <div class={styles.colorSquare} style={{background: "#0094FE"}} onclick={() => setDrawColor("#0094FE")} />
-              <div class={styles.colorSquare} style={{background: "#0026FF"}} onclick={() => setDrawColor("#0026FF")} />
-              <div class={styles.colorSquare} style={{background: "#B100FE"}} onclick={() => setDrawColor("#B100FE")} />
+              <div class={styles.colorSquare} style={{background: "#000"}} onClick={() => setDrawColor("#000")} />
+              <div class={styles.colorSquare} style={{background: "#545454"}} onClick={() => setDrawColor("#545454")} />
+              <div class={styles.colorSquare} style={{background: "#804000"}} onClick={() => setDrawColor("#804000")} />
+              <div class={styles.colorSquare} style={{background: "#FE0000"}} onClick={() => setDrawColor("#FE0000")} />
+              <div class={styles.colorSquare} style={{background: "#FE6A00"}} onClick={() => setDrawColor("#FE6A00")} />
+              <div class={styles.colorSquare} style={{background: "#FFD800"}} onClick={() => setDrawColor("#FFD800")} />
+              <div class={styles.colorSquare} style={{background: "#00FE20"}} onClick={() => setDrawColor("#00FE20")} />
+              <div class={styles.colorSquare} style={{background: "#0094FE"}} onClick={() => setDrawColor("#0094FE")} />
+              <div class={styles.colorSquare} style={{background: "#0026FF"}} onClick={() => setDrawColor("#0026FF")} />
+              <div class={styles.colorSquare} style={{background: "#B100FE"}} onClick={() => setDrawColor("#B100FE")} />
             </div>
             <div class={styles.colorRow}>
-              <div class={styles.colorSquare} style={{background: "#fff"}} onclick={() => setDrawColor("#fff")} />
-              <div class={styles.colorSquare} style={{background: "#A8A8A8"}} onclick={() => setDrawColor("#A8A8A8")} />
-              <div class={styles.colorSquare} style={{background: "#401F00"}} onclick={() => setDrawColor("#401F00")} />
-              <div class={styles.colorSquare} style={{background: "#800001"}} onclick={() => setDrawColor("#800001")} />
-              <div class={styles.colorSquare} style={{background: "#803400"}} onclick={() => setDrawColor("#803400")} />
-              <div class={styles.colorSquare} style={{background: "#806B00"}} onclick={() => setDrawColor("#806B00")} />
-              <div class={styles.colorSquare} style={{background: "#007F0E"}} onclick={() => setDrawColor("#007F0E")} />
-              <div class={styles.colorSquare} style={{background: "#00497E"}} onclick={() => setDrawColor("#00497E")} />
-              <div class={styles.colorSquare} style={{background: "#001280"}} onclick={() => setDrawColor("#001280")} />
-              <div class={styles.colorSquare} style={{background: "#590080"}} onclick={() => setDrawColor("#590080")} />
+              <div class={styles.colorSquare} style={{background: "#fff"}} onClick={() => setDrawColor("#fff")} />
+              <div class={styles.colorSquare} style={{background: "#A8A8A8"}} onClick={() => setDrawColor("#A8A8A8")} />
+              <div class={styles.colorSquare} style={{background: "#401F00"}} onClick={() => setDrawColor("#401F00")} />
+              <div class={styles.colorSquare} style={{background: "#800001"}} onClick={() => setDrawColor("#800001")} />
+              <div class={styles.colorSquare} style={{background: "#803400"}} onClick={() => setDrawColor("#803400")} />
+              <div class={styles.colorSquare} style={{background: "#806B00"}} onClick={() => setDrawColor("#806B00")} />
+              <div class={styles.colorSquare} style={{background: "#007F0E"}} onClick={() => setDrawColor("#007F0E")} />
+              <div class={styles.colorSquare} style={{background: "#00497E"}} onClick={() => setDrawColor("#00497E")} />
+              <div class={styles.colorSquare} style={{background: "#001280"}} onClick={() => setDrawColor("#001280")} />
+              <div class={styles.colorSquare} style={{background: "#590080"}} onClick={() => setDrawColor("#590080")} />
             </div>
           </div>
           <img
@@ -378,7 +392,7 @@ const Canvas: Component<{
             alt="Clear canvas"
           />
         </div>
-      </Show>
+      )}
 		</div>
 	);
 }

@@ -5,6 +5,7 @@ import {createEffect, createSignal, Show} from "solid-js";
 import { Icons } from "../assets/Icons";
 import {room} from '../stores/room.store';
 import styles from "./PlayerList.module.css";
+import {user} from "../stores/user.store";
 
 const PlayerList: Component<{
   socket: Socket
@@ -21,7 +22,11 @@ const PlayerList: Component<{
         {players().map((player: User) => (
           <div class={styles.playerNameWrapper}>
               <span class={player.ready ? styles.greenText: ''}>
-                {player.name}
+                {player.name === user.name ? (
+                  <b>{player.name}</b>
+                ) : (
+                  <>{player.name}</>
+                )}
                 <Show when={player.socketId === room.drawer.socketId} keyed>
                   <img src={Icons.Pencil} height="16" width="16" alt="drawer" />
                 </Show>

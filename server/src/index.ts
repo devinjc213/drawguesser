@@ -59,7 +59,7 @@ io.on("connection", (socket) => {
 	io.to(socket.id).emit('room_update', getRoomData());
 
   socket.on("message", (data) => {
-    GameRoomState.get(data.roomId)?.handleMessage(data);
+    GameRoomState.get(data.room)?.handleMessage(data);
   });
 
 	socket.on("canvas_emit", (data) => {
@@ -162,6 +162,14 @@ io.on("connection", (socket) => {
     const room = Array.from(socket.rooms)[1];
     if (room !== "lobby") GameRoomState.get(room)?.playerLeft(socket.id);
     console.log(`user ${socket.id} disconnected from room: ${room}`);
+  });
+
+  socket.on('save_image_data', () => {
+    io.emit('save_image_data', true);
+  });
+
+  socket.on('undo', () => {
+    io.emit('undo', true);
   });
 });
 
