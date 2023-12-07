@@ -1,46 +1,37 @@
-import { createSignal, createEffect, Show, For } from "solid-js";
-import type { Component, Setter } from 'solid-js';
-import NameModal from './NameModal';
+import { createSignal, Show, For } from "solid-js";
+import type { Component } from 'solid-js';
 import CreateRoom from './CreateRoom';
 import styles from "./RoomBrowser.module.css";
 import type { Socket } from 'socket.io-client';
+import {Room} from "../types/room.type";
+import {user} from "../stores/user.store";
+import {browserRooms, setRoom} from "../stores/room.store";
 
 const RoomBrowser: Component<{
-	getRoom: Setter<string>,
 	socket: Socket,
-	name: string,
-	playerName: string,
-	initialRooms: string[]
 }> = (props) => {
-	const [selectedRoom, setSelectedRoom] = createSignal<string>("");
-	const [roomList, setRoomList] = createSignal<string[]>(props.initialRooms);
+	const [selectedRoom, setSelectedRoom] = createSignal<Room>();
 	const [showCreateModal, setShowCreateModal] = createSignal<boolean>(false);
-	console.log(props.playerName);
-
-	props.socket.on('room_update', rooms => {
-		setRoomList(rooms);
-	});
 
 	return (
 		<div class={styles.roomContainer}>
 			<Show when={!showCreateModal()} keyed>
 				<div class={styles.roomList}>
-					<For each={roomList()}>
-						{(room: string) => (
-							<div
-								class={selectedRoom() === room ? `${styles.roomName} ${styles.selected}` : styles.roomName}
-								onClick={() => setSelectedRoom(room)}
-							>
-								{room}
-							</div>
-						)}
-					</For>
+					{browserRooms.map((room: Room) => (
+						<div
+							class={selectedRoom()?.name === room.name ? `${styles.roomName} ${styles.selected}` : styles.roomName}
+							onClick={() => setSelectedRoom(room)}
+						>
+							{room.name}
+						</div>
+					))}
 				</div>
 				<div class={styles.btnRow}>
 					<button
 						onClick={() => {
-							props.getRoom(selectedRoom());
-							props.socket.emit('join_room', { name: props.name, room: selectedRoom() } );
+							if (!selectedRoom()) return;
+							setRoom(selectedRoom()!);
+							props.socket.emit('join_room', { name: user.name, room: selectedRoom()?.id } );
 						}}
 						class={selectedRoom() ? styles.btn : `${styles.btn} ${styles.btnDisabled}`}
 						disabled={!selectedRoom()}
@@ -51,7 +42,7 @@ const RoomBrowser: Component<{
 				</div>
 			</Show>
 			<Show when={showCreateModal()} keyed>
-				<CreateRoom socket={props.socket} playerName={props.playerName} />
+				<CreateRoom socket={props.socket} />
 			</Show>
 		</div>
 	)

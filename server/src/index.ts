@@ -1,15 +1,15 @@
 import {createServer} from "http";
 import {Server} from "socket.io";
-import GameController from './GameController';
+import express from "express";
+import RoomController from "./controllers/room.controller";
 
 //dont like this implementation, need to think of something better
 //drawer needs to be a field and not stored separately in client and server
 export type User = {
-  [key: string]: {
-    name: string 
-    score: number
-    ready?: boolean
-  }
+  socketId: string
+  name: string
+  score: number
+  ready?: boolean
 }
 
 export type MessageType = {
@@ -19,13 +19,16 @@ export type MessageType = {
   room: string
 }
 
-type GameRoomType = {
-	[key: string]: GameController
-}
+const app = express();
 
-const httpServer = createServer();
+const server = createServer(app);
 
-export const io = new Server(httpServer, {
+app.get("/:roomId", (req, res) => {
+  const roomId = req.params.roomId;
+  console.log(roomId);
+});
+
+export const io = new Server(server, {
 	cors: {
 		origin: "*",
 	}
@@ -33,14 +36,18 @@ export const io = new Server(httpServer, {
 
 console.log('server starting');
 
-let GameRoomState: GameRoomType = {};
+const GameRoomState = new Map<string, RoomController>();
+
+function generateId() {
+  return Math.random().toString(36).substr(2, 9);
+}
 
 setInterval(() => {
-  for (const game in GameRoomState) {
-    if (GameRoomState[game].players.length === 0) {
-      delete GameRoomState[game]
-      io.emit('room_update', Object.keys(GameRoomState));
-      console.log(`detected empty room... deleting ${game}`);
+  for (const room in GameRoomState) {
+    if (GameRoomState.get(room)?.players.length === 0) {
+      GameRoomState.delete(room);
+      io.emit('room_update', getRoomData());
+      console.log(`detected empty room... deleting ${room}`);
     }
   }
 }, 1000);
@@ -49,10 +56,10 @@ io.on("connection", (socket) => {
 	socket.join("lobby");
   console.log(`user ${socket.id} connected`);
 
-	io.to(socket.id).emit('initial_rooms', Object.keys(GameRoomState));
+	io.to(socket.id).emit('room_update', getRoomData());
 
   socket.on("message", (data) => {
-    GameRoomState[data.room].handleMessage(data);
+    GameRoomState.get(data.room)?.handleMessage(data);
   });
 
 	socket.on("canvas_emit", (data) => {
@@ -75,88 +82,118 @@ io.on("connection", (socket) => {
     }
 	});
 
-	socket.on("clear_pos", (clearPos) => {
-		io.emit("clear_pos", clearPos)
+	socket.on("clear_pos", (roomId: string) => {
+		io.to(roomId).emit("clear_pos", true)
 	});
 
-	socket.on("clear_canvas", (clearCanvas) => {
-		io.emit("clear_canvas", clearCanvas);
+	socket.on("clear_canvas", (roomId: string) => {
+		io.to(roomId).emit("clear_canvas", true);
 	});
 
 	socket.on("create_room", (data: {
     name: string
-    playerName: string
-    roundTimer: number
+    maxPlayers: number
     numberOfRounds: number
-    maxNumberOfPlayers: number
-    maxHintsGiven: number
-    hintEnabledAfter: number
+    roundTimer: number
+    maxHints: number
+    hintsEnabledAfter: number
     words: string
+    playerName: string
   }) => {
-		socket.join(data.name);
-		socket.leave("lobby");
-		io.to(socket.id).emit("create_join_room", data.name);
-    console.log(data.playerName);
+    const roomId = generateId();
+    socket.leave("lobby");
+    socket.join(roomId);
 
-    GameRoomState[data.name] = new GameController(
+    const controller = new RoomController(
+      roomId,
       data.name,
-      [{[socket.id]: {name: data.playerName, score: 0}}],
-      socket,
-      data.roundTimer,
+      [{ name: data.playerName, socketId: socket.id, score: 0 }],
+      data.maxPlayers,
       data.numberOfRounds,
-      data.maxNumberOfPlayers,
-      data.maxHintsGiven,
-      data.hintEnabledAfter,
+      data.roundTimer,
+      data.maxHints,
+      data.hintsEnabledAfter,
       data.words.split(',').map((word: string) => word.trim())
     );
 
-    console.log(`room created: ${data.name}`);
+    GameRoomState.set(roomId, controller);
 
-    io.emit('room_update', Object.keys(GameRoomState));
-    io.to(socket.id).emit('players_in_room', GameRoomState[data.name].players);
+    console.log(`room created: ${data.name}`);
+    console.log(`room id: ${roomId}`)
+    console.log(data.name);
+    io.to(socket.id).emit("create_join_room", { id: roomId, name: data.name });
+    io.emit('room_update', getRoomData());
+    io.to(socket.id).emit('players_in_room', GameRoomState.get(roomId)?.players);
 	});
 
 	socket.on("join_room", (data) => {
 		socket.join(data.room);
 		socket.leave("lobby");
-		io.to(data.room).emit('user_joined', data.name);
-		GameRoomState[data.room].playerJoined({ [socket.id]: { name: data.name, score: 0 } })
+		GameRoomState.get(data.room)?.playerJoined({ name: data.name, socketId: socket.id, score: 0 })
     console.log(`user ${data.name} joined room: ${data.room}`);
 	});
 
   socket.on('player_ready', data => {
-    GameRoomState[data.room].playerReady(socket.id);
+    GameRoomState.get(data.room)?.playerReady(socket.id);
   });
 
 	socket.on('start_game', data => {
-		GameRoomState[data.room].gameStart();			
+		GameRoomState.get(data.room)?.game.gameStart();
 	});
 
   socket.on('selected_word', data => {
-    GameRoomState[data.room].setSelectedWord(data.word);
+    GameRoomState.get(data.room)?.game.setSelectedWord(data.word);
   });
 
   socket.on('give_hint', data => {
-    GameRoomState[data.room].handleHint();
+    GameRoomState.get(data.room)?.game.handleHint();
   });
 
   socket.on('leave_room', data => {
-    GameRoomState[data.room].playerLeft(socket.id);
-    io.to(socket.id).emit('room_update', Object.keys(GameRoomState));
+    GameRoomState.get(data.room)?.playerLeft(socket.id);
+    io.to(socket.id).emit('room_update', getRoomData());
   });
 
   socket.on('play_again', data => {
-    GameRoomState[data.room].playAgain();
+    GameRoomState.get(data.room)?.game.playAgain();
   });
 
   socket.on('disconnecting', () => {
     const room = Array.from(socket.rooms)[1];
-    if (room !== "lobby") GameRoomState[room].playerLeft(socket.id);
+    if (room !== "lobby") GameRoomState.get(room)?.playerLeft(socket.id);
     console.log(`user ${socket.id} disconnected from room: ${room}`);
+  });
+
+  socket.on('save_image_data', () => {
+    io.emit('save_image_data', true);
+  });
+
+  socket.on('undo', () => {
+    io.emit('undo', true);
   });
 });
 
-httpServer.listen(4000);
+function getRoomData() {
+  const rooms = [];
+
+  for (const room of GameRoomState.values()) {
+    rooms.push({
+      id: room.id,
+      name: room.name,
+      players: room.players,
+      drawer: room.drawer,
+      gameStarted: room.game.gameIsStarted,
+      roundStarted: room.game.roundIsStarted,
+      currentRound: room.game.currentRound,
+      numberOfRounds: room.numberOfRounds,
+    })
+  }
+
+  return rooms;
+}
+
+server.listen(4000);
+app.listen(3001);
 
 module.exports = {
 	io,

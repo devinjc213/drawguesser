@@ -1,6 +1,7 @@
 import type { Component } from 'solid-js';
 import type { Socket } from 'socket.io-client';
-import type { User } from '../App';
+import { user } from '../stores/user.store';
+import { room } from '../stores/room.store';
 import { For, createSignal, createEffect, onMount, onCleanup } from 'solid-js';
 import styles from './Chat.module.css';
 
@@ -12,10 +13,6 @@ type MessageType = {
 
 const Chat: Component<{
   socket: Socket,
-  drawer: User,
-  name: string,
-  room: string,
-  roundStarted: boolean
 }> = (props) => {
   const [chat, setChat] = createSignal<MessageType[]>([]);
   const [message, setMessage] = createSignal<string>("");
@@ -45,13 +42,13 @@ const Chat: Component<{
 
 	const handleSendMessage = () => {
 		if (!message()
-        || (Object.values(props.drawer)[0].name === props.name) && props.roundStarted) return;
+        || (room.drawer.name === user.name) && room.roundStarted) return;
 
 		props.socket.emit('message', {
       socketId: props.socket.id,
-      name: props.name,
+      name: user.name,
       msg: message(),
-      room: props.room
+      room: room.id
     });
 
 		setMessage("");
@@ -60,6 +57,10 @@ const Chat: Component<{
 	props.socket.on('message', data => {
 		if (data) setChat(chat => [...chat, { name: data.name, msg: data.msg }]);
 	});
+
+  props.socket.on('chat_history', data => {
+    setChat(data);
+  });
 
   props.socket.on('server_message', msg => {
     setChat(chat => [...chat, { name: 'SERVER', msg: msg, serverMsg: true }]);

@@ -1,18 +1,15 @@
 import type { Component, Setter } from "solid-js";
 import type { Socket } from "socket.io-client";
-import type { User } from "../App";
+import type { User } from "../types/user.type";
+import { user } from '../stores/user.store';
+import {game, setGame} from '../stores/game.store';
+import {room, setRoom} from '../stores/room.store';
 import {createEffect, createSignal, Show} from "solid-js";
 import { Icons } from "../assets/Icons";
 import styles from "./GameControls.module.css";
 
 const GameControls: Component<{
   socket: Socket,
-  room: string,
-  drawer: User,
-  name: string,
-  gameStarted: boolean,
-  roundStarted: boolean,
-  setRoom: Setter<string>,
   setMute: Setter<boolean>,
   muted: boolean
 }> = (props) => {
@@ -22,27 +19,27 @@ const GameControls: Component<{
 
   const handleReady = () => {
     setReady(ready => !ready);
-    props.socket.emit('player_ready', { room: props.room });
+    props.socket.emit('player_ready', { room: room.id });
   }
 
 	const handleStart = () => {
-		props.socket.emit('start_game', { room: props.room });
+		props.socket.emit('start_game', { room: room.id });
 	}
 
   const handleLeaveRoom = () => {
     props.socket.emit('leave_room', {
-      room: props.room,
-      name: props.name,
+      room: room.id,
+      name: user.name,
       socketId: props.socket.id
     });
 
-    props.setRoom("lobby");
+    setRoom('name', 'lobby');
+    setRoom('id', '');
   }
 
   createEffect(() => {
     props.socket.on('can_start', canStart => {
       setCanStart(canStart);
-      console.log(canStart);
     });
   });
 
@@ -50,15 +47,15 @@ const GameControls: Component<{
 
   props.socket.on('players_in_room', (players: User[]) => {
     players.map(player => {
-      if (Object.keys(player)[0] === props.socket.id) {
-        setReady(Object.values(player)[0].ready ?? false);
+      if (player.socketId === props.socket.id) {
+        setReady(player.ready ?? false);
       }
     });
   });
 
   return ( 
     <div class={styles.gameControlWrapper}>
-      <Show when={props.socket.id === Object.keys(props.drawer)[0] && props.gameStarted && hintEnabled()} keyed>
+      <Show when={props.socket.id === room.drawer.socketId && game.gameStarted && hintEnabled()} keyed>
         <div class={styles.hintControl}>
           <img
             src={Icons.Hint}
@@ -66,13 +63,13 @@ const GameControls: Component<{
             height="60"
             width="60"
             onClick={() => {
-              if (props.socket.id === Object.keys(props.drawer)[0])
-                props.socket.emit('give_hint', { room: props.room });
+              if (props.socket.id === room.drawer.socketId)
+                props.socket.emit('give_hint', { room: room.id });
             }}
           />
         </div>
       </Show>
-      <Show when={!props.gameStarted} keyed>
+      <Show when={!game.gameStarted} keyed>
         <div
           class={ready() ?
             `${styles.divBtn} ${styles.unreadyBtn}`
@@ -82,9 +79,9 @@ const GameControls: Component<{
           {ready() ? 'Unready' : 'Ready'}
         </div>
           <Show
-            when={props.name
-                  && !props.roundStarted
-                  && Object.keys(props.drawer)[0] === props.socket.id}
+            when={user.name
+                  && !room.roundStarted
+                  && room.drawer.socketId === props.socket.id}
            keyed>
             <div
               class={canStart()
