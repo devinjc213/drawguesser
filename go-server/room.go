@@ -54,3 +54,19 @@ func CreateRoom (
   }
 }
 
+func (room *Room) JoinRoom(player Player) {
+  room.players = append(room.players, player) 
+}
+
+func (room *Room) LeaveRoom(player Player) {
+  for i, p := range room.players {
+    if p.Id == player.Id {
+      room.players = append(room.players[:i], room.players[i+1]...)
+      return
+    }
+  }
+}
+
+func (room *Room) PlayerReady(player Player) {}
+
+func (room *Room) HandleMessage() 
