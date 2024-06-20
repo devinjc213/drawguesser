@@ -22,8 +22,7 @@ const socket = io(
     : import.meta.env.VITE_PROD_IO_URL
 );
 
-console.log('Connecting to:', import.meta.env.DEV ? import.meta.env.VITE_DEV_IO_URL : import.meta.env.VITE_PROD_IO_URL);
-
+console.log(import.meta.env.DEV);
 
 const App: Component = () => {
   const [muted, setMuted] = createSignal<boolean>(false);
