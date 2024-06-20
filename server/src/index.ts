@@ -25,7 +25,7 @@ const server = createServer(app);
 
 export const io = new Server(server, {
 	cors: {
-		origin: "*",
+		origin: "https://drawguesser.devsdev.dev",
 	}
 });
 
