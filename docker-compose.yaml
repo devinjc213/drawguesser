@@ -8,8 +8,8 @@ services:
     ports:
       - "3000:80"
     environment:
-      - {{ project.VITE_DEV_IO_URL }}
-      - {{ project.VITE_PROD_IO_URL }}
+      - VITE_DEV_IO_URL={{ project.DEV_IO_URL }}
+      - VITE_PROD_IO_URL={{ project.PROD_IO_URL }}
     depends_on:
       - backend
 
