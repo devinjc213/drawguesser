@@ -1,6 +1,10 @@
 # Stage 1: Build the application
 FROM node:16 as build
 
+# Print out the environment variables for debugging
+RUN echo "VITE_DEV_IO_URL=${VITE_DEV_IO_URL}"
+RUN echo "VITE_PROD_IO_URL=${VITE_PROD_IO_URL}"
+
 # Set the working directory
 WORKDIR /app
 
