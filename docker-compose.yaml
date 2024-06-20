@@ -19,6 +19,4 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8090:8090"
-    environment:
-      - NODE_ENV=development
 
