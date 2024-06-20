@@ -22,6 +22,5 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8090:8090"
-      - "3001:3001"
       - "9000:9000"
 
