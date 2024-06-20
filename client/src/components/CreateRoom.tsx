@@ -5,25 +5,25 @@ import {Socket} from "socket.io-client";
 import {user} from "../stores/user.store";
 
 export type RoomSettings = {
-  name: string
+  playerName: string
+  roomName: string
   maxPlayers: number
   numberOfRounds: number
   roundTimer: number
   maxHints: number
   hintsEnabledAfter: number
   words: string
-  playerName: string
 }
 const CreateRoom: Component<{socket: Socket}> = (props) => {
   const [roomSettings, setRoomSettings] = createSignal<RoomSettings>({
-    name: "",
+    playerName: user.name,
+    roomName: "",
     maxPlayers: 8,
     numberOfRounds: 3,
     roundTimer: 80,
     maxHints: 3,
     hintsEnabledAfter: 30,
     words: "",
-    playerName: user.name,
   });
   let roomNameRef: any;
 
@@ -56,10 +56,10 @@ const CreateRoom: Component<{socket: Socket}> = (props) => {
       <label>Room name:</label>
       <input
         type="text"
-        value={roomSettings().name}
+        value={roomSettings().roomName}
         onInput={(e) => setRoomSettings({
           ...roomSettings(),
-          name: e.currentTarget.value
+          roomName: e.currentTarget.value
         })}
         ref={roomNameRef}
       />
