@@ -7,10 +7,6 @@ ARG VITE_PROD_IO_URL
 ENV VITE_DEV_IO_URL=${VITE_DEV_IO_URL}
 ENV VITE_PROD_IO_URL=${VITE_PROD_IO_URL}
 
-# Print out the environment variables for debugging
-RUN echo "VITE_DEV_IO_URL=${VITE_DEV_IO_URL}"
-RUN echo "VITE_PROD_IO_URL=${VITE_PROD_IO_URL}"
-
 # Set the working directory
 WORKDIR /app
 
@@ -31,9 +27,6 @@ FROM nginx:alpine
 
 # Copy the built files from the previous stage
 COPY --from=build /app/dist /usr/share/nginx/html
-
-# Copy a custom nginx configuration file
-COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # Expose the port the app runs on
 EXPOSE 80
