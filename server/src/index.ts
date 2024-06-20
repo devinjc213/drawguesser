@@ -23,11 +23,6 @@ const app = express();
 
 const server = createServer(app);
 
-app.get("/:roomId", (req, res) => {
-  const roomId = req.params.roomId;
-  console.log(roomId);
-});
-
 export const io = new Server(server, {
 	cors: {
 		origin: "*",
