@@ -23,7 +23,7 @@ export type MessageType = {
 const app = express();
 
 app.use(cors({
-  origin: "https://drawguesser.devsdev.dev",
+  origin: "*",
   methods: ["GET", "POST"],
   credentials: true,
 }))
@@ -32,7 +32,7 @@ const server = createServer(app);
 
 export const io = new Server(server, {
 	cors: {
-		origin: "https://drawguesser.devsdev.dev",
+		origin: "*",
     methods: ["GET", "POST"],
     credentials: true,
 	}
@@ -197,6 +197,7 @@ function getRoomData() {
 }
 
 server.listen(8090);
+io.listen(9000);
 app.listen(3001);
 
 module.exports = {
