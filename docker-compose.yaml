@@ -8,8 +8,8 @@ services:
     ports:
       - "3000:80"
     environment:
-      - VITE_DEV_IO_URL=http://localhost:8000
-      - VITE_PROD_IO_URL=https://api.devsdev.dev
+      - {{ project.VITE_DEV_IO_URL }}
+      - {{ project.VITE_PROD_IO_URL }}
     depends_on:
       - backend
 
