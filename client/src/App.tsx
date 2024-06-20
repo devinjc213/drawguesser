@@ -15,47 +15,50 @@ import styles from './App.module.css';
 import tick from './assets/sounds/tick.flac';
 import correctGuess from './assets/sounds/correctGuess.mp3';
 import winner from './assets/sounds/winner.wav';
-
-const socket = io(
-  import.meta.env.DEV
-    ? import.meta.env.VITE_DEV_IO_URL
-    : import.meta.env.VITE_PROD_IO_URL
-);
+import type { Socket } from "socket.io-client";
 
 const App: Component = () => {
   const [muted, setMuted] = createSignal<boolean>(false);
+  let socket: Socket;
 
   const sound_tick = new Audio(tick);
   const sound_guess = new Audio(correctGuess);
   const sound_game_over = new Audio(winner);
 
   onMount(() => {
+    socket = io("http://localhost:8090", {
+      path: "/socket.io/"
+    });
+
     setGame('socket', socket);
     setRoom('socket', socket);
     const params = useParams();
 
+    socket.on("connect", () => console.log("connected", socket.id))
+
     if (params.room) {
       socket.emit('join_room', { name: user.name, roomId: params.room } );
     }
+
+    socket.on('game_over', () => {
+      if (!muted()) {
+        sound_game_over.play();
+      }
+    });
+
+    socket.on('play_tick', () => {
+      if (!muted()) sound_tick.play()
+    });
+
+    socket.on('player_guessed_word', () => {
+      if (!muted()) {
+        sound_guess.play();
+      }
+    });
   });
 
   onCleanup(() => socket.disconnect());
 
-  socket.on('game_over', () => {
-    if (!muted()) {
-      sound_game_over.play();
-    }
-  });
-
-  socket.on('play_tick', () => {
-    if (!muted()) sound_tick.play()
-  });
-
-  socket.on('player_guessed_word', () => {
-    if (!muted()) {
-      sound_guess.play();
-    }
-  });
 
   return (
     <div class={styles.App}>

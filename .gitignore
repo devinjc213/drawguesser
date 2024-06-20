@@ -5,3 +5,5 @@ server/dist/GameController.js
 server/dist/index.js
 interfaces
 **/*.env
+go-server/dgserv
+go-server/go.sum
