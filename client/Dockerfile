@@ -1,6 +1,12 @@
 # Stage 1: Build the application
 FROM node:16 as build
 
+ARG VITE_DEV_IO_URL
+ARG VITE_PROD_IO_URL
+
+ENV VITE_DEV_IO_URL=${VITE_DEV_IO_URL}
+ENV VITE_PROD_IO_URL=${VITE_PROD_IO_URL}
+
 # Set the working directory
 WORKDIR /app
 
