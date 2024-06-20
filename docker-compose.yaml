@@ -18,7 +18,7 @@ services:
       context: ./server
       dockerfile: Dockerfile
     ports:
-      - "8000:8000"
+      - "8090:8090"
     environment:
       - NODE_ENV=development
 
