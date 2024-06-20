@@ -2,6 +2,7 @@ import {createServer} from "http";
 import {Server} from "socket.io";
 import express from "express";
 import RoomController from "./controllers/room.controller";
+import cors from "cors";
 
 //dont like this implementation, need to think of something better
 //drawer needs to be a field and not stored separately in client and server
@@ -21,11 +22,19 @@ export type MessageType = {
 
 const app = express();
 
+app.use(cors({
+  origin: "https://drawguesser.devsdev.dev",
+  methods: ["GET", "POST"],
+  credentials: true,
+}))
+
 const server = createServer(app);
 
 export const io = new Server(server, {
 	cors: {
 		origin: "https://drawguesser.devsdev.dev",
+    methods: ["GET", "POST"],
+    credentials: true,
 	}
 });
 
