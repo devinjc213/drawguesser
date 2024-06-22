@@ -2,6 +2,7 @@ import {createServer} from "http";
 import {Server} from "socket.io";
 import express from "express";
 import RoomController from "./controllers/room.controller";
+import cors from "cors";
 
 //dont like this implementation, need to think of something better
 //drawer needs to be a field and not stored separately in client and server
@@ -20,17 +21,20 @@ export type MessageType = {
 }
 
 const app = express();
+console.log("test");
+
+app.use(cors({
+  origin: "https://drawguesser.devsdev.dev",
+  credentials: true,
+}))
 
 const server = createServer(app);
 
-app.get("/:roomId", (req, res) => {
-  const roomId = req.params.roomId;
-  console.log(roomId);
-});
-
 export const io = new Server(server, {
 	cors: {
-		origin: "*",
+		origin: "https://drawguesser.devsdev.dev",
+    methods: ["GET", "POST"],
+    credentials: true,
 	}
 });
 
@@ -192,8 +196,7 @@ function getRoomData() {
   return rooms;
 }
 
-server.listen(4000);
-app.listen(3001);
+server.listen(3009);
 
 module.exports = {
 	io,

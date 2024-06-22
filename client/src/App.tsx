@@ -1,9 +1,9 @@
-import {createSignal, Show, onCleanup, createEffect, onMount} from 'solid-js';
+import {createSignal, Show, onCleanup, onMount} from 'solid-js';
 import type { Component } from 'solid-js';
 import { useParams } from '@solidjs/router';
 import { io } from "socket.io-client";
 import { game, setGame } from './stores/game.store';
-import { user, setUser } from './stores/user.store';
+import { user } from './stores/user.store';
 import { room, setRoom } from './stores/room.store';
 import NameModal from './components/NameModal';
 import RoomBrowser from './components/RoomBrowser';
@@ -19,7 +19,11 @@ import winner from './assets/sounds/winner.wav';
 const socket = io(
   import.meta.env.DEV
     ? import.meta.env.VITE_DEV_IO_URL
-    : import.meta.env.VITE_PROD_IO_URL
+    : import.meta.env.VITE_PROD_IO_URL,
+  {
+    withCredentials: true,
+    path: "/socket.io/"
+  }
 );
 
 const App: Component = () => {

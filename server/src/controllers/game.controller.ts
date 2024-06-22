@@ -3,6 +3,7 @@ import type { Socket } from 'socket.io'
 import fs from "fs";
 import RoomController from "./room.controller";
 import {getRandomUniqueIndex, shuffle} from "../utils";
+import path from "path";
 
 export default class GameController {
   private room: RoomController;
@@ -28,7 +29,7 @@ export default class GameController {
     extraWords: string[]
   ) {
     this.room = room;
-    this.words = JSON.parse(fs.readFileSync(__dirname + '/1000_words.json', 'utf8')).concat(extraWords);
+    this.words = JSON.parse(fs.readFileSync(path.join(__dirname, '1000_words.json'), 'utf8')).concat(extraWords);
     this.gameIsStarted = false;
     this.roundIsStarted = false;
     this.currentRound = 1;
