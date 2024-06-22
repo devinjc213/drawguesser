@@ -16,6 +16,9 @@ COPY . .
 # Build the TypeScript application
 RUN npm run build
 
+# Copy the JSON file to the dist directory
+RUN cp ./src/controllers/1000_words.json ./dist/controllers
+
 # Stage 2: Run the application
 FROM node:16
 
