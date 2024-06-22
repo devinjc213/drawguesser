@@ -28,7 +28,7 @@ export default class GameController {
     extraWords: string[]
   ) {
     this.room = room;
-    this.words = JSON.parse(fs.readFileSync(__dirname + '/1000_words.json', 'utf8')).concat(extraWords);
+    this.words = JSON.parse(fs.readFileSync('./1000_words.json', 'utf8')).concat(extraWords);
     this.gameIsStarted = false;
     this.roundIsStarted = false;
     this.currentRound = 1;
