@@ -31,7 +31,6 @@ RUN npm install --production
 
 # Expose the application port
 EXPOSE 8090
-EXPOSE 9000
 
 # Start the application
 CMD ["node", "dist/index.js"]

@@ -197,8 +197,6 @@ function getRoomData() {
 }
 
 server.listen(8090);
-io.listen(9000);
-app.listen(3001);
 
 module.exports = {
 	io,
