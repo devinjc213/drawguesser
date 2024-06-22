@@ -10,7 +10,7 @@ ENV VITE_PROD_IO_URL=${VITE_PROD_IO_URL}
 # Set the working directory
 WORKDIR /app
 
-RUN cat client/package.json
+RUN ls
 # Copy package.json and package-lock.json
 COPY package*.json ./
 
