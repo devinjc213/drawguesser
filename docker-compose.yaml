@@ -15,7 +15,7 @@ services:
       - VITE_PROD_IO_URL
     depends_on:
       - backend
-    network_mode: host
+    container_name: dgfe
 
   backend:
     build:
@@ -23,4 +23,5 @@ services:
       dockerfile: Dockerfile
     ports:
       - "3001:3001"
+    container_name: dgbe
 
