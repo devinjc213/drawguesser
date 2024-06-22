@@ -29,6 +29,9 @@ FROM httpd:alpine
 # Copy the built files from the previous stage to the Apache web root
 COPY --from=build /app/dist /usr/local/apache2/htdocs/
 
+# Copy custom Apache configuration
+COPY httpd.conf /usr/local/apache2/conf/httpd.conf
+
 # Expose the port the app runs on (80 for production)
 EXPOSE 80
 
