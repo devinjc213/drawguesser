@@ -15,8 +15,7 @@ services:
       - VITE_PROD_IO_URL
     depends_on:
       - backend
-    networks:
-      - dgnet
+    network_mode: host
 
   backend:
     build:
@@ -24,9 +23,4 @@ services:
       dockerfile: Dockerfile
     ports:
       - "3001:3001"
-    networks:
-      - dgnet
 
-networks:
-  dgnet:
-    driver: bridge
