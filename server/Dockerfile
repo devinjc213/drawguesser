@@ -30,7 +30,7 @@ COPY package*.json ./
 RUN npm install --production
 
 # Expose the application port
-EXPOSE 3000
+EXPOSE 3001
 
 # Start the application
 CMD ["node", "dist/index.js"]
