@@ -19,7 +19,11 @@ import winner from './assets/sounds/winner.wav';
 const socket = io(
   import.meta.env.DEV
     ? import.meta.env.VITE_DEV_IO_URL
-    : import.meta.env.VITE_PROD_IO_URL
+    : import.meta.env.VITE_PROD_IO_URL,
+  {
+    withCredentials: true,
+    path: "/socket.io/"
+  }
 );
 
 console.log(import.meta.env.DEV);
