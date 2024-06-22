@@ -16,7 +16,6 @@ services:
     depends_on:
       - backend
     network_mode: host
-    hellow
 
   backend:
     build:
