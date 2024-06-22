@@ -26,8 +26,6 @@ const socket = io(
   }
 );
 
-console.log(import.meta.env.DEV);
-
 const App: Component = () => {
   const [muted, setMuted] = createSignal<boolean>(false);
 

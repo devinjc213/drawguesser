@@ -23,15 +23,14 @@ COPY . .
 # Build the application
 RUN npm run build
 
-# Stage 2: Serve the application using a lightweight web server
-FROM nginx:alpine
+# Stage 2: Serve the application using Apache
+FROM httpd:alpine
 
-# Copy the built files from the previous stage
-COPY --from=build /app/dist /usr/share/nginx/html
+# Copy the built files from the previous stage to the Apache web root
+COPY --from=build /app/dist /usr/local/apache2/htdocs/
 
-# Expose the port the app runs on
+# Expose the port the app runs on (80 for production)
 EXPOSE 80
 
-# Start Nginx server
-CMD ["nginx", "-g", "daemon off;"]
-
+# Start Apache server
+CMD ["httpd-foreground"]
