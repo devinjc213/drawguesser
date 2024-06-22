@@ -23,6 +23,9 @@ COPY . .
 # Build the application
 RUN npm run build
 
+# Copy the JSON file to the dist directory
+RUN cp ./src/controllers/1000_words.json ./dist
+
 # Stage 2: Serve the application using Nginx
 FROM nginx:alpine
 
