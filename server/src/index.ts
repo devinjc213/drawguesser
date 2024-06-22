@@ -24,7 +24,6 @@ const app = express();
 
 app.use(cors({
   origin: "https://drawguesser.devsdev.dev",
-  methods: ["GET", "POST"],
   credentials: true,
 }))
 
@@ -33,7 +32,6 @@ const server = createServer(app);
 export const io = new Server(server, {
 	cors: {
 		origin: "https://drawguesser.devsdev.dev",
-    methods: ["GET", "POST"],
     credentials: true,
 	}
 });
