@@ -23,17 +23,14 @@ COPY . .
 # Build the application
 RUN npm run build
 
-# Stage 2: Serve the application using Apache
-FROM httpd:alpine
+# Stage 2: Serve the application using Nginx
+FROM nginx:alpine
 
-# Copy the built files from the previous stage to the Apache web root
-COPY --from=build /app/dist /usr/local/apache2/htdocs/
+# Copy the built files from the previous stage
+COPY --from=build /app/dist /usr/share/nginx/html
 
-# Copy custom Apache configuration
-COPY httpd.conf /usr/local/apache2/conf/httpd.conf
-
-# Expose the port the app runs on (80 for production)
+# Expose the port the app runs on
 EXPOSE 80
 
-# Start Apache server
-CMD ["httpd-foreground"]
+# Start Nginx server
+CMD ["nginx", "-g", "daemon off;"]
