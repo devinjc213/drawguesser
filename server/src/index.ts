@@ -21,6 +21,7 @@ export type MessageType = {
 }
 
 const app = express();
+console.log("test");
 
 app.use(cors({
   origin: "https://drawguesser.devsdev.dev",
