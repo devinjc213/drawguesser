@@ -36,7 +36,6 @@ const Canvas: Component<{
 	let lastX: number;
 	let lastY: number;
   let imageData: ImageData;
-  let lastImageData: ImageData;
   let tick: any;
 
   createEffect(() => {
@@ -48,7 +47,6 @@ const Canvas: Component<{
     ctx.fillStyle = "white";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    document.addEventListener('mousedown', handleLastImageData);
     document.addEventListener('mousemove', draw);
     document.addEventListener('mousedown', handlePos);
     document.addEventListener('mousedown', bucket);
@@ -57,27 +55,11 @@ const Canvas: Component<{
   });
 
 	onCleanup(() => {
-    document.removeEventListener('mousedown', handleLastImageData);
     document.removeEventListener('mousemove', draw);
     document.removeEventListener('mousedown', handlePos);
     document.removeEventListener('mousedown', bucket);
     document.removeEventListener('mouseup', clearPos);
     document.removeEventListener('mouseEnter', handlePos);
-  });
-
-  const handleLastImageData = (e: any) => {
-    if (canvas.contains(e.target)) {
-      lastImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      props.socket.emit('save_image_data', props.socket.id);
-      console.log('save image data sent');
-    }
-  }
-
-  props.socket.on('save_image_data', (id: string) => {
-    if (id !== props.socket.id) {
-      lastImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      console.log('save image data received');
-    }
   });
 
 	const handleBrushSize = (e: any) => {
@@ -88,21 +70,6 @@ const Canvas: Component<{
 		ctx.fillStyle = "white";
 		ctx.fillRect(0, 0, canvas.width, canvas.height);
 	}
-
-  const handleUndo = () => {
-    handleClear();
-    ctx.putImageData(lastImageData, 0, 0);
-    props.socket.emit('undo', props.socket.id);
-    console.log('undo sent');
-  }
-
-  props.socket.on('undo', (id: string) => {
-    if (id !== props.socket.id) {
-      handleClear();
-      ctx.putImageData(lastImageData, 0, 0);
-      console.log('undo received');
-    }
-  });
 
 	const handlePos = (e: any) => {
 		rect = canvas.getBoundingClientRect();
@@ -256,7 +223,7 @@ const Canvas: Component<{
 
 	const clearPos = () => {
 		setPos({ x: 0, y: 0 });
-		props.socket.emit('clear_pos', true);
+		props.socket.emit('clear_pos', room.id);
 	}
 
 	const emitDraw = (x: number, y: number, color: string, brushSize: number) => {
@@ -290,7 +257,6 @@ const Canvas: Component<{
 	props.socket.on('clear_pos', () => {
     lastX = 0;
     lastY = 0;
-    console.log('cleared pos');
   });
 
 	props.socket.on('clear_canvas', () => {
@@ -378,7 +344,6 @@ const Canvas: Component<{
             height="36"
             width="36"
             style={{ cursor: "pointer" }}
-            onClick={() => handleUndo()}
             alt="Undo"
           />
           <img
