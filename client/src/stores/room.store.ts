@@ -1,6 +1,6 @@
 import {createStore} from 'solid-js/store';
 import type {Room} from "../types/room.type";
-import {game, setGame} from "./game.store";
+import {setGame} from "./game.store";
 import {User} from "../types/user.type";
 import {createEffect} from "solid-js";
 
@@ -39,14 +39,12 @@ createEffect(() => {
     });
 
     room.socket.on('create_join_room', (room: { id: string, name: string }) => {
-      console.log(room);
       setRoom('id', room.id);
       setRoom('name', room.name)
     });
 
     room.socket.on('drawer_update', (drawer: User) => {
       setRoom('drawer', drawer)
-      console.log('drawer updated', drawer);
     });
 
     room.socket.on('round_start', () => setRoom('roundStarted', true));
@@ -56,7 +54,6 @@ createEffect(() => {
     });
 
     room.socket.on('players_in_room', (players: User[]) => {
-      console.log('players', players);
       setRoom('users', players);
     });
   }

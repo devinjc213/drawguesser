@@ -5,23 +5,23 @@ import {getRandomUniqueIndex, shuffle} from "../utils";
 import path from "path";
 
 export default class GameController {
-  private room: RoomController;
-  public gameIsStarted: boolean;
-	public roundIsStarted: boolean;
-	public currentRound: number;
-	public currentRoundTimer: number;
-	private readonly chooseDrawWordTimer: number;
-	private currentChooseDrawWordTimer: number;
+  private readonly chooseDrawWordTimer: number;
   private readonly roundStartTime: number;
+  private readonly words: string[];
+  private room: RoomController;
+  private currentChooseDrawWordTimer: number;
   private currentRoundStartTime: number;
-	private readonly words: string[];
-  public wordsToDraw: string[];
   private usedWordIndexes: number[];
-  public selectedWord: string;
   private playersGuessedCorrect: User[];
 	private interval: any;
   private hintsGiven: number;
   private hintIndexes: number[];
+  public roundIsStarted: boolean;
+  public currentRound: number;
+  public gameIsStarted: boolean;
+  public currentRoundTimer: number;
+  public wordsToDraw: string[];
+  public selectedWord: string;
 
 	constructor(
     room: RoomController,

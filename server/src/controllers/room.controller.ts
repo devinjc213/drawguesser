@@ -106,6 +106,9 @@ export default class RoomController {
 
         this.game.handleScore(socketId, this.game.currentRoundTimer);
 
+        const player = this.players.find(player => player.socketId === socketId);
+        if (player) this.playersGuessedCorrect.push(player)
+
         if (this.playersGuessedCorrect.length === this.players.length - 1) {
           io.to(this.id).emit('server_message', 'All users have guessed the word!');
 
