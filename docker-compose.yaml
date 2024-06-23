@@ -22,6 +22,9 @@ services:
       dockerfile: Dockerfile
     ports:
       - "3009:3009"
+    environment:
+      - NODE_ENV
+      - PORT
 
   nginx:
     image: nginx:alpine

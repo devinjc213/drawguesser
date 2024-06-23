@@ -2,10 +2,10 @@ import {createServer} from "http";
 import {Server} from "socket.io";
 import express from "express";
 import RoomController from "./controllers/room.controller";
+import {isDrawer} from "./utils";
 import cors from "cors";
+require('dotenv').config();
 
-//dont like this implementation, need to think of something better
-//drawer needs to be a field and not stored separately in client and server
 export type User = {
   socketId: string
   name: string
@@ -21,20 +21,22 @@ export type MessageType = {
 }
 
 const app = express();
-console.log("test");
+
+const isProd = process.env.NODE_ENV === 'prod';
+const origin = isProd ? "https://drawguesser.devsdev.dev" : "http://localhost:3000";
 
 app.use(cors({
-  origin: "https://drawguesser.devsdev.dev",
-  credentials: true,
+  origin,
+  credentials: true
 }))
 
 const server = createServer(app);
 
 export const io = new Server(server, {
 	cors: {
-		origin: "https://drawguesser.devsdev.dev",
+		origin,
     methods: ["GET", "POST"],
-    credentials: true,
+    credentials: true
 	}
 });
 
@@ -67,31 +69,44 @@ io.on("connection", (socket) => {
   });
 
 	socket.on("canvas_emit", (data) => {
-    if (data.type === "draw") {
-      io.emit("canvas_emit", { 
-        type: data.type,
-        x: data.x, 
-        y: data.y, 
-        color: data.color, 
-        brushSize: data.brushSize, 
-        id: data.id 
-      });
-    } else if (data.type === "bucket") {
-      io.emit("canvas_emit", {
-        type: data.type,
-        stack: data.stack,
-        clickedColor: data.clickedColor,
-        bucketColor: data.bucketColor
-      });
+    const drawerFromRoom = GameRoomState.get(data.roomId)?.drawer.socketId;
+
+    if (isDrawer(drawerFromRoom ?? '', socket.id)) {
+      if (data.type === "draw") {
+        io.to(data.roomId).emit("canvas_emit", { 
+          type: data.type,
+          x: data.x, 
+          y: data.y, 
+          color: data.color, 
+          brushSize: data.brushSize, 
+          drawerId: data.drawerId 
+        });
+      } else if (data.type === "bucket") {
+        io.to(data.roomId).emit("canvas_emit", {
+          type: data.type,
+          stack: data.stack,
+          clickedColor: data.clickedColor,
+          bucketColor: data.bucketColor,
+          drawerId: data.drawerId
+        });
+      }
     }
 	});
 
 	socket.on("clear_pos", (roomId: string) => {
-		io.to(roomId).emit("clear_pos", true)
+    const drawerFromRoom = GameRoomState.get(roomId)?.drawer.socketId;
+
+    if (isDrawer(drawerFromRoom ?? '', socket.id)) {
+      io.to(roomId).emit("clear_pos", true)
+    }
 	});
 
 	socket.on("clear_canvas", (roomId: string) => {
-		io.to(roomId).emit("clear_canvas", true);
+    const drawerFromRoom = GameRoomState.get(roomId)?.drawer.socketId;
+
+    if (isDrawer(drawerFromRoom ?? '', socket.id)) {
+      io.to(roomId).emit("clear_canvas", socket.id);
+    }
 	});
 
 	socket.on("create_room", (data: {
@@ -168,10 +183,6 @@ io.on("connection", (socket) => {
     console.log(`user ${socket.id} disconnected from room: ${room}`);
   });
 
-  socket.on('save_image_data', () => {
-    io.emit('save_image_data', true);
-  });
-
   socket.on('undo', () => {
     io.emit('undo', true);
   });
@@ -196,7 +207,7 @@ function getRoomData() {
   return rooms;
 }
 
-server.listen(3009);
+server.listen(process.env.PORT ?? 3009);
 
 module.exports = {
 	io,
