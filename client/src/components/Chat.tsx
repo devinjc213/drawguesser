@@ -63,7 +63,6 @@ const Chat: Component<{
   });
 
   props.socket.on('server_message', msg => {
-    console.log('received message: ', msg);
     setChat(chat => [...chat, { name: 'SERVER', msg: msg, serverMsg: true }]);
   });
 
