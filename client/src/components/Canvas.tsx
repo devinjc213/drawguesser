@@ -7,8 +7,7 @@ import ChooseWordOverlay from "./ChooseWordOverlay";
 import GameEndOverlay from "./GameEndOverlay";
 import Hint from './Hint';
 import { game } from '../stores/game.store';
-import {room, setRoom} from "../stores/room.store";
-import {user} from "../stores/user.store";
+import {room} from "../stores/room.store";
 
 type Pos = {
   x: number
@@ -36,7 +35,6 @@ const Canvas: Component<{
 	let lastX: number;
 	let lastY: number;
   let imageData: ImageData;
-  let tick: any;
 
   createEffect(() => {
     setIsDrawer(props.socket.id === room.drawer.socketId);
@@ -47,20 +45,33 @@ const Canvas: Component<{
     ctx.fillStyle = "white";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    document.addEventListener('mousemove', draw);
-    document.addEventListener('mousedown', handlePos);
-    document.addEventListener('mousedown', bucket);
-    document.addEventListener('mouseup', clearPos);
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mousedown', handleMouseDown);
+    document.addEventListener('mouseup', handleMouseUp);
     document.addEventListener('mouseEnter', handlePos);
   });
 
 	onCleanup(() => {
-    document.removeEventListener('mousemove', draw);
-    document.removeEventListener('mousedown', handlePos);
-    document.removeEventListener('mousedown', bucket);
-    document.removeEventListener('mouseup', clearPos);
+    document.removeEventListener('mousemove', handleMouseMove);
+    document.removeEventListener('mousedown', handleMouseDown);
+    document.removeEventListener('mouseup', handleMouseUp);
     document.removeEventListener('mouseEnter', handlePos);
   });
+
+  const handleMouseMove = (e: any) => {
+    if (isDrawer()) draw(e);
+  }
+
+  const handleMouseDown = (e: any) => {
+    if (isDrawer()) {
+      handlePos(e);
+      bucket(e);
+    }
+  }
+
+  const handleMouseUp = () => {
+    if (isDrawer()) clearPos();
+  }
 
 	const handleBrushSize = (e: any) => {
 		setBrushSize(e.currentTarget.value);
@@ -69,6 +80,7 @@ const Canvas: Component<{
 	const handleClear = () => {
 		ctx.fillStyle = "white";
 		ctx.fillRect(0, 0, canvas.width, canvas.height);
+    props.socket.emit("clear_canvas", room.id);
 	}
 
 	const handlePos = (e: any) => {
@@ -88,9 +100,9 @@ const Canvas: Component<{
 		if (e.buttons !== 1
           || paintTool() === "bucket"
           || outOfBounds(pos().x, pos().y)
-          || !isDrawer
           || !room.roundStarted
         ) return;
+
 		ctx.beginPath();
 
 		ctx.lineWidth = brushSize();
@@ -109,7 +121,8 @@ const Canvas: Component<{
       y: pos().y,
       color: drawColor(),
       brushSize: brushSize(),
-      id: props.socket.id
+      drawerId: props.socket.id,
+      roomId: room.id
     });
 	};
 
@@ -200,7 +213,7 @@ const Canvas: Component<{
   }
 
   const bucket = (e: any) => {
-    if (paintTool() !== "bucket" || !isDrawer) return;
+    if (paintTool() !== "bucket") return;
     if (!imageData) imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     handlePos(e);
     const clickedColor = getColorAtPos(imageData, pos().x, pos().y);
@@ -259,8 +272,8 @@ const Canvas: Component<{
     lastY = 0;
   });
 
-	props.socket.on('clear_canvas', () => {
-    handleClear();
+	props.socket.on('clear_canvas', (id) => {
+    if (id !== room.drawer.socketId) handleClear();
   });
 
 	return (

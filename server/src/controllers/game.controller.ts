@@ -1,5 +1,4 @@
-import { io, User, MessageType } from '../index';
-import type { Socket } from 'socket.io'
+import { io, User } from '../index';
 import fs from "fs";
 import RoomController from "./room.controller";
 import {getRandomUniqueIndex, shuffle} from "../utils";

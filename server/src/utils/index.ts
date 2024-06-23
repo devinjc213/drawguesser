@@ -23,3 +23,7 @@ export function shuffle<T>(array: T[]): T[] {
 
   return array;
 }
+
+export function isDrawer(drawerId: string, socketId: string): boolean {
+  return drawerId === socketId;
+}
