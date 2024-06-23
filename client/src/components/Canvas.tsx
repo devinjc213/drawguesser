@@ -272,8 +272,8 @@ const Canvas: Component<{
     lastY = 0;
   });
 
-	props.socket.on('clear_canvas', (id) => {
-    if (id !== room.drawer.socketId) handleClear();
+	props.socket.on('clear_canvas', () => {
+    handleClear();
   });
 
 	return (
